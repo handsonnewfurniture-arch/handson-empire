@@ -1,0 +1,31 @@
+{
+  "name": "handson-empire-backend",
+  "version": "1.0.0",
+  "description": "Turbocharged backend for HandsOn Empire - Lead gen for Denver home services",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "scrape": "node scraper.js",
+    "test": "echo \"No tests yet\" && exit 0"
+  },
+  "keywords": ["lead-generation", "handson", "home-services", "denver"],
+  "author": "Tiger McBride <handsonmovers303@gmail.com>",
+  "license": "PROPRIETARY",
+  "type": "commonjs",
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "@supabase/supabase-js": "^2.99.3",
+    "axios": "^1.13.6",
+    "cheerio": "^1.2.0",
+    "chrome-aws-lambda": "^10.1.0",
+    "cors": "^2.8.6",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "puppeteer-core": "^24.40.0",
+    "twilio": "^5.13.0",
+    "ws": "^8.19.0"
+  }
+}

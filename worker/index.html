@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HandsOn Worker - Lead Feed</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #0a0f1a;
+      color: #f1f5f9;
+      min-height: 100vh;
+    }
+    .header {
+      background: #0f1623;
+      border-bottom: 1px solid #1e293b;
+      padding: 12px 16px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .logo { font-weight: 800; font-size: 18px; color: #f97316; }
+    .status { display: flex; align-items: center; gap: 8px; }
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+      animation: pulse 2s infinite;
+    }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+    .status-text { font-size: 12px; color: #64748b; }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 16px; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; margin-bottom: 20px; }
+    .stat-card {
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .stat-value { font-size: 24px; font-weight: 800; color: #f97316; }
+    .stat-label { font-size: 11px; color: #64748b; margin-top: 4px; }
+
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .critical-badge {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(239, 68, 68, 0.15);
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      border-radius: 8px;
+      padding: 6px 12px;
+      animation: pulse 2s infinite;
+    }
+    .critical-badge span { color: #ef4444; font-weight: 700; font-size: 13px; }
+
+    .search {
+      flex: 1;
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      border-radius: 8px;
+      padding: 8px 12px;
+      color: #f1f5f9;
+      font-size: 13px;
+    }
+    .search:focus { outline: none; border-color: #f97316; }
+
+    .filter-btn {
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      color: #64748b;
+      border-radius: 8px;
+      padding: 8px 14px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .filter-btn.active {
+      background: rgba(249, 115, 22, 0.15);
+      border-color: #f97316;
+      color: #f97316;
+    }
+
+    .lead-list { display: flex; flex-direction: column; gap: 8px; }
+    .lead-card {
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      border-radius: 12px;
+      padding: 12px 16px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      transition: all 0.2s;
+    }
+    .lead-card:hover { border-color: #f97316; transform: translateX(2px); }
+    .lead-card.claimed { border-color: #22c55e; }
+    .lead-card.new { animation: slideIn 0.3s ease-out; }
+    @keyframes slideIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+
+    .lead-icon { font-size: 36px; flex-shrink: 0; }
+    .lead-content { flex: 1; min-width: 0; }
+    .lead-header { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; flex-wrap: wrap; }
+    .priority-badge {
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .priority-CRITICAL { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; }
+    .priority-HOT { background: rgba(249,115,22,0.15); color: #f97316; border: 1px solid #f97316; }
+    .priority-WARM { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid #eab308; }
+
+    .badge {
+      background: rgba(34,197,94,0.15);
+      color: #22c55e;
+      border: 1px solid rgba(34,197,94,0.3);
+      border-radius: 4px;
+      padding: 1px 7px;
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .lead-title { font-size: 13px; font-weight: 600; color: #e2e8f0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .lead-meta { font-size: 12px; color: #64748b; margin-top: 2px; }
+    .lead-score { text-align: right; flex-shrink: 0; }
+    .score-value { font-size: 16px; font-weight: 800; color: #f97316; }
+    .score-label { font-size: 10px; color: #475569; }
+
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal.active { display: flex; }
+    .modal-content {
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      width: 100%;
+      max-width: 560px;
+      max-height: 90vh;
+      overflow-y: auto;
+      padding: 28px;
+      position: relative;
+    }
+    .modal-close {
+      position: absolute;
+      top: 16px;
+      right: 16px;
+      background: #1e293b;
+      border: none;
+      color: #94a3b8;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 18px;
+    }
+
+    .claim-btn {
+      width: 100%;
+      background: linear-gradient(135deg,#f97316,#ea580c);
+      border: none;
+      color: #fff;
+      border-radius: 10px;
+      padding: 14px 20px;
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 20px rgba(249,115,22,0.4);
+    }
+    .claim-btn:hover { transform: translateY(-2px); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="logo">HandsOn⚡ Worker</div>
+    <div class="status">
+      <div class="status-dot"></div>
+      <div class="status-text"><span id="connectionStatus">Connected</span> • <span id="leadCount">0</span> leads</div>
+    </div>
+  </div>
+
+  <div class="container">
+    <div class="stats" id="stats"></div>
+
+    <div class="toolbar">
+      <div class="critical-badge" id="criticalBadge" style="display: none;">
+        <span>🚨 <span id="criticalCount">0</span> CRITICAL</span>
+      </div>
+      <input type="text" class="search" id="searchInput" placeholder="Search leads..." />
+      <button class="filter-btn active" onclick="app.setFilter('all')">All</button>
+      <button class="filter-btn" onclick="app.setFilter('CRITICAL')">Critical</button>
+      <button class="filter-btn" onclick="app.setFilter('HOT')">Hot</button>
+    </div>
+
+    <div class="lead-list" id="leadList"></div>
+  </div>
+
+  <!-- MODAL -->
+  <div class="modal" id="modal">
+    <div class="modal-content" id="modalContent">
+      <button class="modal-close" onclick="app.closeModal()">✕</button>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <script>
+    const TRADES = {
+      movers: '🚚', roofing: '🏠', hvac: '❄️', electrical: '⚡', plumbing: '🚰',
+      painting: '🎨', junk: '🗑️', solar: '☀️', landscaping: '🌳', dumpster: '🏗️',
+      storage: '📦', powerwash: '💦', trailer: '🚛'
+    };
+
+    const app = {
+      leads: [],
+      claimed: {},
+      filter: 'all',
+      searchQuery: '',
+      ws: null,
+      selectedLead: null,
+
+      init() {
+        this.connectWebSocket();
+        this.loadLeads();
+        document.getElementById('searchInput').addEventListener('input', (e) => {
+          this.searchQuery = e.target.value.toLowerCase();
+          this.render();
+        });
+      },
+
+      connectWebSocket() {
+        this.ws = new WebSocket('ws://localhost:3000');
+
+        this.ws.onopen = () => {
+          console.log('🔌 WebSocket connected');
+          document.getElementById('connectionStatus').textContent = 'Live';
+        };
+
+        this.ws.onmessage = (event) => {
+          const { event: eventType, data } = JSON.parse(event.data);
+
+          if (eventType === 'NEW_LEAD') {
+            this.leads.unshift(data);
+            this.render();
+            this.playNotificationSound();
+          }
+
+          if (eventType === 'LEAD_CLAIMED') {
+            this.claimed[data.id] = true;
+            this.render();
+          }
+        };
+
+        this.ws.onclose = () => {
+          console.log('🔌 WebSocket disconnected');
+          document.getElementById('connectionStatus').textContent = 'Offline';
+          setTimeout(() => this.connectWebSocket(), 3000);
+        };
+      },
+
+      async loadLeads() {
+        try {
+          const res = await fetch('http://localhost:3000/api/leads');
+          const { leads } = await res.json();
+          this.leads = leads || [];
+          this.render();
+        } catch (error) {
+          console.error('Error loading leads:', error);
+        }
+      },
+
+      setFilter(filter) {
+        this.filter = filter;
+        document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+        this.render();
+      },
+
+      getFilteredLeads() {
+        let filtered = this.leads;
+
+        if (this.filter !== 'all') {
+          filtered = filtered.filter(l => l.priority === this.filter);
+        }
+
+        if (this.searchQuery) {
+          filtered = filtered.filter(l =>
+            l.title.toLowerCase().includes(this.searchQuery) ||
+            l.city.toLowerCase().includes(this.searchQuery)
+          );
+        }
+
+        return filtered.sort((a, b) => {
+          const pOrder = { CRITICAL: 0, HOT: 1, WARM: 2, COLD: 3 };
+          return pOrder[a.priority] - pOrder[b.priority] || b.score - a.score;
+        });
+      },
+
+      render() {
+        const filtered = this.getFilteredLeads();
+        const critCount = filtered.filter(l => l.priority === 'CRITICAL').length;
+        const pipeline = filtered.reduce((sum, l) => sum + (l.revenue || 0), 0);
+
+        // Stats
+        document.getElementById('stats').innerHTML = `
+          <div class="stat-card">
+            <div class="stat-value">${filtered.length}</div>
+            <div class="stat-label">Total Leads</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${critCount}</div>
+            <div class="stat-label">Critical</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">$${pipeline.toLocaleString()}</div>
+            <div class="stat-label">Pipeline</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-value">${Object.keys(this.claimed).length}</div>
+            <div class="stat-label">Claimed</div>
+          </div>
+        `;
+
+        // Critical badge
+        if (critCount > 0) {
+          document.getElementById('criticalBadge').style.display = 'flex';
+          document.getElementById('criticalCount').textContent = critCount;
+        } else {
+          document.getElementById('criticalBadge').style.display = 'none';
+        }
+
+        // Lead count
+        document.getElementById('leadCount').textContent = filtered.length;
+
+        // Lead list
+        document.getElementById('leadList').innerHTML = filtered.map(lead => `
+          <div class="lead-card ${this.claimed[lead.id] ? 'claimed' : ''}" onclick="app.openLead('${lead.id}')">
+            <div class="lead-icon">${TRADES[lead.trade] || '📋'}</div>
+            <div class="lead-content">
+              <div class="lead-header">
+                <span class="priority-badge priority-${lead.priority}">${lead.priority}</span>
+                ${this.claimed[lead.id] ? '<span class="badge">CLAIMED</span>' : ''}
+                ${lead.phone ? '<span class="badge">HAS PHONE</span>' : ''}
+              </div>
+              <div class="lead-title">${lead.title}</div>
+              <div class="lead-meta">${lead.city}, CO • $${(lead.revenue || 0).toLocaleString()}</div>
+            </div>
+            <div class="lead-score">
+              <div class="score-value">${lead.score || 0}</div>
+              <div class="score-label">score</div>
+            </div>
+          </div>
+        `).join('');
+      },
+
+      openLead(id) {
+        this.selectedLead = this.leads.find(l => l.id === id);
+        if (!this.selectedLead) return;
+
+        const isClaimed = this.claimed[id];
+
+        document.getElementById('modalBody').innerHTML = `
+          <div style="text-align: center; margin-bottom: 20px;">
+            <div style="font-size: 52px; margin-bottom: 14px;">${TRADES[this.selectedLead.trade] || '📋'}</div>
+            <div style="display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 4px;">
+              <span class="priority-badge priority-${this.selectedLead.priority}">${this.selectedLead.priority}</span>
+              <span class="badge">Score: ${this.selectedLead.score}</span>
+            </div>
+            <h2 style="font-size: 18px; font-weight: 700; color: #f1f5f9; line-height: 1.3; margin-top: 8px;">${this.selectedLead.title}</h2>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px;">
+            <div style="background: #0a0f1a; border-radius: 8px; padding: 8px 12px;">
+              <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-bottom: 2px;">TRADE</div>
+              <div style="font-size: 13px; color: #e2e8f0; font-weight: 600;">${this.selectedLead.trade}</div>
+            </div>
+            <div style="background: #0a0f1a; border-radius: 8px; padding: 8px 12px;">
+              <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-bottom: 2px;">VALUE</div>
+              <div style="font-size: 13px; color: #e2e8f0; font-weight: 600;">$${(this.selectedLead.revenue || 0).toLocaleString()}</div>
+            </div>
+            <div style="background: #0a0f1a; border-radius: 8px; padding: 8px 12px;">
+              <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-bottom: 2px;">CITY</div>
+              <div style="font-size: 13px; color: #e2e8f0; font-weight: 600;">${this.selectedLead.city}</div>
+            </div>
+            <div style="background: #0a0f1a; border-radius: 8px; padding: 8px 12px;">
+              <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-bottom: 2px;">SOURCE</div>
+              <div style="font-size: 13px; color: #e2e8f0; font-weight: 600;">${this.selectedLead.source}</div>
+            </div>
+          </div>
+
+          ${this.selectedLead.notes ? `
+          <div style="background: #0a0f1a; border-radius: 8px; padding: 10px 14px; margin-bottom: 12px;">
+            <div style="font-size: 10px; color: #64748b; font-weight: 600; margin-bottom: 4px;">NOTES</div>
+            <div style="font-size: 13px; color: #cbd5e1; line-height: 1.5;">${this.selectedLead.notes}</div>
+          </div>
+          ` : ''}
+
+          ${this.selectedLead.sms ? `
+          <div style="background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25); border-radius: 10px; padding: 12px 16px; margin-bottom: 18px;">
+            <div style="font-size: 10px; color: #c084fc; font-weight: 700; margin-bottom: 6px;">AI SMS SCRIPT</div>
+            <div style="font-size: 13px; color: #e9d5ff; font-style: italic; line-height: 1.5;">${this.selectedLead.sms}</div>
+          </div>
+          ` : ''}
+
+          ${isClaimed ? `
+            <div style="text-align: center; color: #22c55e; font-size: 12px; font-weight: 600; margin-bottom: 16px;">✓ You claimed this lead</div>
+            ${this.selectedLead.phone ? `
+              <a href="tel:${this.selectedLead.phone}" class="claim-btn">📞 Call Customer — ${this.selectedLead.phone}</a>
+            ` : '<div style="text-align: center; color: #64748b; font-size: 13px;">No phone number available</div>'}
+          ` : `
+            <button class="claim-btn" onclick="app.claimLead('${id}')">🔒 Claim Exclusive Lead — $${(this.selectedLead.revenue || 0).toLocaleString()} est.</button>
+          `}
+        `;
+
+        document.getElementById('modal').classList.add('active');
+      },
+
+      async claimLead(id) {
+        try {
+          const res = await fetch(`http://localhost:3000/api/leads/${id}/claim`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ worker_id: 'w1' }) // Would be dynamic in production
+          });
+
+          const { lead } = await res.json();
+
+          this.claimed[id] = true;
+          this.render();
+          this.openLead(id); // Refresh modal
+        } catch (error) {
+          console.error('Error claiming lead:', error);
+          alert('Error claiming lead. Please try again.');
+        }
+      },
+
+      closeModal() {
+        document.getElementById('modal').classList.remove('active');
+        this.selectedLead = null;
+      },
+
+      playNotificationSound() {
+        const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSpz0fPTgjMGHGS57OihUBELTKXh8bllHAU2jdXyzn0vBCd6y/DalUMKE2G36+mjUxEKSKDf87tiIAUrctDz1YU2Bhxrt+3qp1oUC0yj4fK5ZRsFNojP8c5+MAUpds3w3JdFCxFeuuvpoFERCkaf4PK9bSAFK3HO8tiIMwYbZ7vu6qNVFAtNouHxt2IdBTaGzvLOfzEGJ3LM8d2URQsQXLrq6J9RFApGnt/yvW0hBSpwzfPXiTMGGmW67umjVBMJTKHh8bllHgU2hc/xzoA0Bihwy/LelUYMEVy66+mfURQKRp3e8r1uIgUrb8zy2Ik0BRpluu7so1UUCkug4PG4ZSAFNoPO8s+ANQYocMrz35VIDhFctOvpn1IVCkec3vK9cCMFK27M8tmINwUZY7rs6qVYFApKn9/yuWYiBTiCzvLPgTYHJ2/J8+CVSRERWrPr6aFTFgpFnN3yv3IkBSptyu3aiToGGmG46+ynWxgKSpzd8bppJAU6f83x0IA3CCZuyPPhlk0SEVmy6+mjVRYKRJrc8sB0JQUtaMnz24o4BRlft+vrrF8bCkib3PG8aSMFPHrM8dGAOAglbcj05ZpQExFYserkpFgYCkOZ2vLBeCYGLGXH8t6MPQYZXbTq7q5jHQpInNvyvW0jBT1xx/HUgz4IJWvG8+ecThYRV7Hq5KVaFwpCmNnyw3omBixi' +
+        'xvLfji8GF1ux6+6wZiBKWJva8r5wJQU9b8bx1YQ+CSRpxPTnnlIZEFWv6eSnXBkKQJbZ8sR+KQYtX8by4I4xBhZYr+vwsmgjC1aX2PG+ciQFPG3F8daFPwkjaMPy6aJUGhFUrenkvl4aCj+U2fPFgCoHLV3E8uGOMgYWV63r8LNoIwtVlNbxv3QkBT1rxPHXhjwJI2bB8uqjVh0RU6vn5MBfGwo+kdnzx4IrBy1bwvLiiy8GFVWr6/K2aiYLU5HV8cB2JAU8acLx2Ic9CSRlv/Lrpladg==');
+        audio.play().catch(() => {});
+      }
+    };
+
+    app.init();
+  </script>
+</body>
+</html>

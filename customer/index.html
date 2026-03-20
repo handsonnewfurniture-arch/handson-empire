@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HandsOn - Get one quote. Not six.</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #0a0f1a 0%, #1a1f2e 100%);
+      color: #f1f5f9;
+      min-height: 100vh;
+    }
+    .container { max-width: 700px; margin: 0 auto; padding: 20px; }
+    .hero { text-align: center; padding: 60px 20px 40px; }
+    .hero h1 { font-size: 48px; font-weight: 900; line-height: 1.1; margin-bottom: 12px; }
+    .hero .highlight { color: #f97316; }
+    .hero p { color: #94a3b8; font-size: 16px; margin-bottom: 32px; }
+
+    .comparison { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 36px; text-align: left; }
+    .comparison-card { background: rgba(15, 22, 35, 0.8); border: 1px solid #1e293b; border-radius: 12px; padding: 18px; }
+    .comparison-card.bad { border-color: rgba(239, 68, 68, 0.3); background: rgba(239, 68, 68, 0.05); }
+    .comparison-card.good { border-color: rgba(249, 115, 22, 0.3); background: rgba(249, 115, 22, 0.08); }
+    .comparison-card h3 { font-size: 18px; margin-bottom: 8px; }
+    .comparison-card.bad h3 { color: #f87171; }
+    .comparison-card.good h3 { color: #f97316; }
+    .comparison-card p { font-size: 14px; color: #94a3b8; margin-bottom: 4px; }
+
+    .trade-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); gap: 8px; margin-bottom: 28px; }
+    .trade-btn {
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.4);
+      border-radius: 10px;
+      padding: 14px 8px;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .trade-btn:hover { background: rgba(249, 115, 22, 0.25); transform: translateY(-2px); }
+    .trade-btn .icon { font-size: 32px; }
+    .trade-btn .label { font-size: 11px; color: #e2e8f0; font-weight: 600; }
+
+    .cta {
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      border: none;
+      color: #fff;
+      border-radius: 12px;
+      padding: 16px 40px;
+      font-size: 16px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 0 24px rgba(249, 115, 22, 0.35);
+      transition: all 0.2s;
+    }
+    .cta:hover { transform: translateY(-2px); box-shadow: 0 0 32px rgba(249, 115, 22, 0.5); }
+
+    .form-screen { display: none; }
+    .form-screen.active { display: block; }
+
+    .back-btn {
+      background: transparent;
+      border: none;
+      color: #64748b;
+      cursor: pointer;
+      font-size: 14px;
+      margin-bottom: 20px;
+      padding: 8px 0;
+    }
+    .back-btn:hover { color: #94a3b8; }
+
+    .form-group { margin-bottom: 16px; }
+    .form-label { font-size: 12px; font-weight: 600; color: #64748b; margin-bottom: 10px; display: block; }
+    textarea {
+      width: 100%;
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      padding: 14px;
+      color: #f1f5f9;
+      font-size: 14px;
+      min-height: 100px;
+      resize: vertical;
+      font-family: inherit;
+    }
+    textarea:focus { outline: none; border-color: #f97316; }
+
+    .urgency-btns { display: flex; gap: 8px; }
+    .urgency-btn {
+      flex: 1;
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      color: #64748b;
+      border-radius: 8px;
+      padding: 10px 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      transition: all 0.2s;
+    }
+    .urgency-btn.active {
+      background: rgba(249, 115, 22, 0.15);
+      border-color: #f97316;
+      color: #f97316;
+    }
+
+    .worker-card {
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      border-radius: 16px;
+      padding: 28px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .worker-card .icon { font-size: 64px; margin-bottom: 14px; }
+    .worker-card h2 { font-size: 22px; margin-bottom: 6px; }
+    .worker-card .meta { display: flex; justify-content: center; gap: 8px; margin-bottom: 12px; flex-wrap: wrap; }
+    .worker-card .badge {
+      background: rgba(249, 115, 22, 0.15);
+      color: #f97316;
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      border-radius: 6px;
+      padding: 2px 10px;
+      font-size: 12px;
+      font-weight: 700;
+    }
+    .worker-card .bio { color: #94a3b8; font-size: 13px; line-height: 1.5; margin-bottom: 24px; }
+    .call-btn {
+      display: block;
+      background: linear-gradient(135deg, #f97316, #ea580c);
+      color: #fff;
+      border-radius: 12px;
+      padding: 16px 24px;
+      font-size: 17px;
+      font-weight: 800;
+      text-decoration: none;
+      box-shadow: 0 0 24px rgba(249, 115, 22, 0.35);
+    }
+    .call-btn:hover { transform: translateY(-2px); }
+
+    .promise {
+      background: rgba(34, 197, 94, 0.08);
+      border: 1px solid rgba(34, 197, 94, 0.2);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: 13px;
+      color: #86efac;
+      margin-bottom: 20px;
+    }
+    .promise strong { color: #22c55e; }
+
+    .start-over {
+      background: #0f1623;
+      border: 1px solid #1e293b;
+      color: #64748b;
+      border-radius: 8px;
+      padding: 10px 24px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- HOME SCREEN -->
+    <div id="homeScreen" class="form-screen active">
+      <div class="hero">
+        <h1>Get one quote.<br><span class="highlight">Not six.</span></h1>
+        <p>HandsOn matches you to the best verified worker in your area — exclusively. One quote, done.</p>
+      </div>
+
+      <div class="comparison">
+        <div class="comparison-card bad">
+          <h3>Thumbtack</h3>
+          <p>2.3★ rating</p>
+          <p>Sells to 6 buyers</p>
+          <p>$15–$150/lead</p>
+        </div>
+        <div class="comparison-card good">
+          <h3>HandsOn</h3>
+          <p>4.9★ rating</p>
+          <p>1 buyer only</p>
+          <p>8% on completion</p>
+        </div>
+      </div>
+
+      <div class="form-label">WHAT DO YOU NEED?</div>
+      <div class="trade-grid" id="tradeGrid"></div>
+
+      <button class="cta" onclick="app.showForm()">Post a Job →</button>
+    </div>
+
+    <!-- FORM SCREEN -->
+    <div id="formScreen" class="form-screen">
+      <button class="back-btn" onclick="app.showHome()">← Back</button>
+      <h2 style="font-weight: 800; font-size: 22px; margin-bottom: 20px;">What do you need help with?</h2>
+
+      <div class="form-group">
+        <label class="form-label">SELECT A TRADE</label>
+        <div class="trade-grid" id="tradeGridForm"></div>
+      </div>
+
+      <div class="form-group">
+        <textarea id="jobDesc" placeholder="Describe your job... (e.g., need help moving a 2BR apartment this Saturday)"></textarea>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">URGENCY</label>
+        <div class="urgency-btns">
+          <button class="urgency-btn" onclick="app.setUrgency('immediate')">Immediate 🔥</button>
+          <button class="urgency-btn active" onclick="app.setUrgency('this_week')">This Week</button>
+          <button class="urgency-btn" onclick="app.setUrgency('this_month')">This Month</button>
+        </div>
+      </div>
+
+      <button class="cta" style="width: 100%;" onclick="app.findMatch()">Find My Match →</button>
+    </div>
+
+    <!-- MATCHED SCREEN -->
+    <div id="matchedScreen" class="form-screen">
+      <div style="text-align: center; padding: 24px 0;">
+        <h2 style="font-weight: 800; font-size: 22px; margin-bottom: 6px;">Your perfect match.</h2>
+        <p style="color: #64748b; font-size: 14px; margin-bottom: 28px;">Based on your job, we found the best available pro.</p>
+
+        <div class="worker-card" id="workerCard"></div>
+
+        <div class="promise">
+          <strong>The HandsOn Promise:</strong> You get one quote from one verified pro. No spam. No bidding wars. Just the right person for your job.
+        </div>
+
+        <button class="start-over" onclick="app.reset()">Start Over</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const TRADES = {
+      movers: { icon: '🚚', label: 'Movers' },
+      roofing: { icon: '🏠', label: 'Roofing' },
+      hvac: { icon: '❄️', label: 'HVAC' },
+      electrical: { icon: '⚡', label: 'Electrical' },
+      plumbing: { icon: '🚰', label: 'Plumbing' },
+      painting: { icon: '🎨', label: 'Painting' },
+      junk: { icon: '🗑️', label: 'Junk Removal' },
+      solar: { icon: '☀️', label: 'Solar' },
+      landscaping: { icon: '🌳', label: 'Landscaping' },
+      dumpster: { icon: '🏗️', label: 'Dumpster' },
+      storage: { icon: '📦', label: 'Storage' },
+      powerwash: { icon: '💦', label: 'Power Wash' }
+    };
+
+    const WORKERS = [
+      { id: 'w1', name: 'Marcus T.', trades: ['movers'], rating: 4.9, jobs: 847, phone: '(720) 441-9923', bio: 'Denver\'s #1 rated mover. 847 five-star moves. Full pack/unpack, piano specialist.' },
+      { id: 'w2', name: 'Sarah K.', trades: ['roofing'], rating: 4.8, jobs: 312, phone: '(303) 882-4411', bio: '15yr roofing pro. Storm damage specialist. Insurance claims expert.' },
+      { id: 'w3', name: 'Diego R.', trades: ['electrical', 'plumbing'], rating: 4.9, jobs: 1204, phone: '(720) 554-7823', bio: 'Licensed electrician & master plumber. Panel upgrades, EV chargers.' },
+      { id: 'w4', name: 'James W.', trades: ['solar'], rating: 5.0, jobs: 89, phone: '(303) 991-8823', bio: 'Top-rated solar installer in CO. $0 down financing. 25yr warranty.' },
+      { id: 'w5', name: 'Carlos F.', trades: ['movers', 'dumpster'], rating: 4.8, jobs: 2341, phone: '(303) 882-1234', bio: 'Full-service moving, dumpster rental. 2341 completed jobs.' }
+    ];
+
+    const app = {
+      selectedTrade: null,
+      urgency: 'this_week',
+      matchedWorker: null,
+
+      init() {
+        this.renderTradeGrid();
+      },
+
+      renderTradeGrid() {
+        const grid1 = document.getElementById('tradeGrid');
+        const grid2 = document.getElementById('tradeGridForm');
+
+        const html = Object.entries(TRADES).map(([key, { icon, label }]) => `
+          <button class="trade-btn" onclick="app.selectTrade('${key}', true)">
+            <div class="icon">${icon}</div>
+            <div class="label">${label}</div>
+          </button>
+        `).join('');
+
+        const html2 = Object.entries(TRADES).map(([key, { icon, label }]) => `
+          <button class="trade-btn ${this.selectedTrade === key ? 'active' : ''}" onclick="app.selectTrade('${key}')">
+            <div class="icon">${icon}</div>
+            <div class="label">${label}</div>
+          </button>
+        `).join('');
+
+        grid1.innerHTML = html;
+        grid2.innerHTML = html2;
+      },
+
+      selectTrade(trade, autoAdvance = false) {
+        this.selectedTrade = trade;
+        this.renderTradeGrid();
+        if (autoAdvance) this.showForm();
+      },
+
+      setUrgency(urgency) {
+        this.urgency = urgency;
+        document.querySelectorAll('.urgency-btn').forEach(btn => btn.classList.remove('active'));
+        event.target.classList.add('active');
+      },
+
+      showHome() {
+        document.querySelectorAll('.form-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('homeScreen').classList.add('active');
+      },
+
+      showForm() {
+        document.querySelectorAll('.form-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('formScreen').classList.add('active');
+      },
+
+      findMatch() {
+        if (!this.selectedTrade) {
+          alert('Please select a trade first');
+          return;
+        }
+
+        // Find available worker for this trade
+        const matched = WORKERS.find(w => w.trades.includes(this.selectedTrade));
+
+        if (!matched) {
+          alert('No workers available for that trade right now');
+          return;
+        }
+
+        this.matchedWorker = matched;
+        this.showMatched();
+      },
+
+      showMatched() {
+        const { icon, label } = TRADES[this.selectedTrade];
+        const w = this.matchedWorker;
+
+        document.getElementById('workerCard').innerHTML = `
+          <div class="icon">${icon}</div>
+          <h2>${w.name}</h2>
+          <div class="meta">
+            <span class="badge">Elite</span>
+            <span style="color: #fbbf24; font-weight: 700;">${'★'.repeat(Math.round(w.rating))} ${w.rating}</span>
+            <span style="color: #64748b; font-size: 13px;">${w.jobs.toLocaleString()} jobs</span>
+          </div>
+          <div class="bio">${w.bio}</div>
+          <a href="tel:${w.phone}" class="call-btn">📞 Call ${w.name} — ${w.phone}</a>
+        `;
+
+        document.querySelectorAll('.form-screen').forEach(s => s.classList.remove('active'));
+        document.getElementById('matchedScreen').classList.add('active');
+      },
+
+      reset() {
+        this.selectedTrade = null;
+        this.urgency = 'this_week';
+        this.matchedWorker = null;
+        document.getElementById('jobDesc').value = '';
+        this.showHome();
+      }
+    };
+
+    app.init();
+  </script>
+</body>
+</html>
