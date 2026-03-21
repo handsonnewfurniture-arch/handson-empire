@@ -17,6 +17,16 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_KEY || process.env.SUPABASE_ANON_KEY
 );
 
+// ═══ TWILIO SETUP ═══
+let twilioClient = null;
+if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
+  const twilio = require('twilio');
+  twilioClient = twilio(process.env.TWILIO_ACCOUNT_SID, process.env.TWILIO_AUTH_TOKEN);
+  console.log('📱 Twilio SMS enabled');
+}
+const TWILIO_PHONE = process.env.TWILIO_PHONE || '+17744687657';
+const ALERT_PHONE = process.env.ALERT_PHONE || '+17208990383'; // Tiger's phone
+
 const DENVER_CITIES = ['denver', 'aurora', 'lakewood', 'littleton', 'englewood',
                        'thornton', 'arvada', 'westminster', 'centennial', 'boulder'];
 
@@ -49,48 +59,105 @@ async function scrapeCraigslist(city = 'denver', trade = 'movers') {
     const url = `https://${city}.craigslist.org/search/sss?query=${encodeURIComponent(searchTerm)}&sort=date`;
 
     const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
+        'Accept-Language': 'en-US,en;q=0.5'
+      },
       timeout: 15000
     });
 
     const $ = cheerio.load(data);
     const leads = [];
 
-    $('.result-row').each((i, elem) => {
-      if (i >= 15) return false;
+    // NEW: Parse JSON-LD structured data (Craigslist's new format)
+    const jsonLdScript = $('#ld_searchpage_results').html();
+    if (jsonLdScript) {
+      try {
+        const jsonData = JSON.parse(jsonLdScript);
+        const items = jsonData?.itemListElement || [];
 
-      const $elem = $(elem);
-      const title = $elem.find('.result-title').text().trim();
-      const link = $elem.find('.result-title').attr('href');
-      const price = $elem.find('.result-price').text().trim();
-      const date = $elem.find('.result-date').attr('datetime');
-      const location = $elem.find('.result-hood').text().trim();
+        items.slice(0, 15).forEach((item, i) => {
+          const listing = item?.item;
+          if (!listing) return;
 
-      const titleLower = title.toLowerCase();
-      const isRelevant = keywords.some(kw => titleLower.includes(kw.toLowerCase()));
+          const title = listing.name || '';
+          const price = listing.offers?.price || '';
+          const address = listing.offers?.availableAtOrFrom?.address || {};
+          const location = address.addressLocality || city;
 
-      if (isRelevant && title) {
-        leads.push({
-          id: `cl-${city}-${Date.now()}-${i}`,
-          trade,
-          source: `Craigslist ${city.charAt(0).toUpperCase() + city.slice(1)}`,
-          signal_type: 'DIRECT_AD',
-          title,
-          city: city.charAt(0).toUpperCase() + city.slice(1),
-          state: 'CO',
-          signal_date: date || new Date().toISOString().split('T')[0],
-          status: 'NEW',
-          revenue: parseInt(price?.replace(/\D/g, '')) || estimateRevenue(trade),
-          urgency: 'this_week',
-          signals: ['DIRECT_INTENT'],
-          phone: null,
-          address: location || '',
-          notes: `Found on Craigslist ${city}`,
-          link,
-          sms: `Hi! HandsOn ${trade.charAt(0).toUpperCase() + trade.slice(1)} - saw your post on Craigslist. We help with ${trade}. Free quote today. (720) 899-0383`
+          const titleLower = title.toLowerCase();
+          const isRelevant = keywords.some(kw => titleLower.includes(kw.toLowerCase()));
+
+          if (isRelevant && title) {
+            leads.push({
+              id: `cl-${city}-${Date.now()}-${i}`,
+              trade,
+              source: `Craigslist ${city.charAt(0).toUpperCase() + city.slice(1)}`,
+              signal_type: 'DIRECT_AD',
+              title,
+              city: location.charAt(0).toUpperCase() + location.slice(1),
+              state: address.addressRegion || 'CO',
+              signal_date: new Date().toISOString().split('T')[0],
+              status: 'NEW',
+              score: 75,
+              priority: 'HOT',
+              revenue: parseInt(String(price).replace(/\D/g, '')) || estimateRevenue(trade),
+              urgency: 'this_week',
+              signals: ['DIRECT_INTENT', 'CRAIGSLIST'],
+              phone: null,
+              address: address.streetAddress || '',
+              notes: `Found on Craigslist ${city}. ${listing.description || ''}`.substring(0, 200),
+              link: null,
+              sms: `Hi! HandsOn ${trade.charAt(0).toUpperCase() + trade.slice(1)} - saw your post on Craigslist. We help with ${trade}. Free quote today. (720) 899-0383`
+            });
+          }
         });
+      } catch (parseError) {
+        console.log(`⚠️ [Craigslist ${city}] JSON-LD parse failed, trying fallback...`);
       }
-    });
+    }
+
+    // FALLBACK: Try gallery card format (newer HTML structure)
+    if (leads.length === 0) {
+      $('li.cl-search-result, .gallery-card, .result-row').each((i, elem) => {
+        if (i >= 15) return false;
+
+        const $elem = $(elem);
+        const title = $elem.find('.title, .posting-title, .result-title, a.titlestring').text().trim() ||
+                     $elem.find('a').first().text().trim();
+        const link = $elem.find('a').first().attr('href');
+        const price = $elem.find('.price, .result-price, .priceinfo').text().trim();
+        const location = $elem.find('.meta, .result-hood, .location').text().trim();
+
+        const titleLower = title.toLowerCase();
+        const isRelevant = keywords.some(kw => titleLower.includes(kw.toLowerCase()));
+
+        if (isRelevant && title && title.length > 5) {
+          leads.push({
+            id: `cl-${city}-${Date.now()}-${i}`,
+            trade,
+            source: `Craigslist ${city.charAt(0).toUpperCase() + city.slice(1)}`,
+            signal_type: 'DIRECT_AD',
+            title,
+            city: city.charAt(0).toUpperCase() + city.slice(1),
+            state: 'CO',
+            signal_date: new Date().toISOString().split('T')[0],
+            status: 'NEW',
+            score: 75,
+            priority: 'HOT',
+            revenue: parseInt(price?.replace(/\D/g, '')) || estimateRevenue(trade),
+            urgency: 'this_week',
+            signals: ['DIRECT_INTENT', 'CRAIGSLIST'],
+            phone: null,
+            address: location || '',
+            notes: `Found on Craigslist ${city}`,
+            link: link?.startsWith('http') ? link : `https://${city}.craigslist.org${link}`,
+            sms: `Hi! HandsOn ${trade.charAt(0).toUpperCase() + trade.slice(1)} - saw your post on Craigslist. We help with ${trade}. Free quote today. (720) 899-0383`
+          });
+        }
+      });
+    }
 
     console.log(`✅ [Craigslist ${city}] Found ${leads.length} leads`);
     return leads;
@@ -467,6 +534,59 @@ function estimateRevenue(trade) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
+// SMS ALERTS FOR CRITICAL LEADS
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function sendCriticalLeadAlert(lead) {
+  if (!twilioClient) {
+    console.log(`⚠️ Twilio not configured - would send alert for: ${lead.title}`);
+    return;
+  }
+
+  try {
+    const message = `🔥 CRITICAL LEAD 🔥
+
+${lead.trade.toUpperCase()} - ${lead.source}
+"${lead.title}"
+
+💰 Est. Value: $${lead.revenue?.toLocaleString() || 'TBD'}
+📍 ${lead.city}, ${lead.state}
+⚡ Priority: ${lead.priority}
+
+📱 Ready SMS:
+${lead.sms}
+
+Claim now in HandsOn Empire!`;
+
+    await twilioClient.messages.create({
+      body: message,
+      from: TWILIO_PHONE,
+      to: ALERT_PHONE
+    });
+
+    console.log(`📱 SMS alert sent for: ${lead.title}`);
+  } catch (error) {
+    console.error(`❌ SMS alert failed:`, error.message);
+  }
+}
+
+async function alertCriticalLeads(leads) {
+  const criticalLeads = leads.filter(l => l.priority === 'CRITICAL' || l.score >= 85);
+
+  if (criticalLeads.length === 0) {
+    console.log('ℹ️ No CRITICAL leads to alert');
+    return;
+  }
+
+  console.log(`📱 Sending ${criticalLeads.length} CRITICAL lead alerts...`);
+
+  for (const lead of criticalLeads.slice(0, 5)) { // Max 5 alerts per run
+    await sendCriticalLeadAlert(lead);
+    await delay(1000); // Rate limit
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // SAVE LEADS TO SUPABASE
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -487,6 +607,10 @@ async function saveLeads(leads) {
     }
 
     console.log(`✅ Saved ${leads.length} leads to database`);
+
+    // Send SMS alerts for CRITICAL leads
+    await alertCriticalLeads(leads);
+
   } catch (error) {
     console.error('❌ Error saving leads:', error.message);
   }
