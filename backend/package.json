@@ -2,7 +2,7 @@
   "name": "handson-empire-backend",
   "version": "1.0.0",
   "description": "Turbocharged backend for HandsOn Empire - Lead gen for Denver home services",
-  "main": "server.js",
+  "main": "start.js",
   "scripts": {
     "start": "node start.js",
     "start:scraper": "node auto-scraper.js",
