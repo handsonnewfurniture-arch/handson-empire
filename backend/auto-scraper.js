@@ -185,7 +185,13 @@ const { checkEmails: checkNextdoor } = require('./nextdoor-parser.js');
 // Craigslist RSS feeds (ToS-compliant)
 const { scrapeCraigslistRSS } = require('./craigslist-rss.js');
 
-// National scraper
+// National Craigslist (50 US metros)
+const { scrapeNationalCraigslist } = require('./craigslist-national.js');
+
+// Lead qualification engine
+const { qualifyLead } = require('./lead-scorer.js');
+
+// National Reddit scraper
 const { runNationalScrape } = require('./national-scraper.js');
 const NATIONAL_INTERVAL = 4 * 60 * 60 * 1000; // Every 4 hours
 
@@ -204,10 +210,17 @@ async function runNextdoorScan() {
 // Main loop
 console.log(`
 ╔══════════════════════════════════════════════════════════════════════════╗
-║            🤖 HANDSON AUTO-SCRAPER - RUNNING                             ║
-║            Local scan: Every 30 min (Reddit, Nextdoor, Craigslist RSS)   ║
-║            National scan: Every 4 hours (31 US cities)                   ║
-║            CRITICAL leads will be emailed to you                         ║
+║            🤖 HANDSON AUTO-SCRAPER v2.0 - NATIONAL EDITION               ║
+╠══════════════════════════════════════════════════════════════════════════╣
+║  LOCAL (every 30 min):                                                   ║
+║    • Reddit r/Denver, Nextdoor emails, Craigslist Denver/Boulder/COS     ║
+║                                                                          ║
+║  NATIONAL (every 4 hours):                                               ║
+║    • Reddit: 31 city subreddits                                          ║
+║    • Craigslist: 50 US metros (12 services each)                         ║
+║                                                                          ║
+║  LEAD SCORING: Advanced qualification engine                             ║
+║  ALERTS: CRITICAL/HOT leads emailed instantly                            ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 `);
 
@@ -217,8 +230,9 @@ runNextdoorScan();
 scrapeCraigslistRSS().catch(e => console.log('Craigslist RSS error:', e.message));
 
 // Run national scrape on startup too
-console.log('\n🇺🇸 Running initial national scan...');
-runNationalScrape().catch(e => console.log('National scan error:', e.message));
+console.log('\n🇺🇸 Running initial national scan (Reddit + Craigslist 50 metros)...');
+runNationalScrape().catch(e => console.log('National Reddit error:', e.message));
+scrapeNationalCraigslist({ tierLimit: 3 }).catch(e => console.log('National Craigslist error:', e.message));
 
 // Local scrape every 30 minutes
 setInterval(() => {
@@ -227,10 +241,11 @@ setInterval(() => {
   scrapeCraigslistRSS().catch(e => console.log('Craigslist RSS error:', e.message));
 }, SCRAPE_INTERVAL);
 
-// National scrape every 4 hours
+// National scrape every 4 hours (Reddit + Craigslist 50 metros)
 setInterval(() => {
-  console.log('\n🇺🇸 Running scheduled national scan...');
-  runNationalScrape().catch(e => console.log('National scan error:', e.message));
+  console.log('\n🇺🇸 Running scheduled national scan (Reddit + Craigslist)...');
+  runNationalScrape().catch(e => console.log('National Reddit error:', e.message));
+  scrapeNationalCraigslist({ tierLimit: 4 }).catch(e => console.log('National Craigslist error:', e.message));
 }, NATIONAL_INTERVAL);
 
 console.log('⏰ Local scan: every 30 min | National scan: every 4 hours\n');

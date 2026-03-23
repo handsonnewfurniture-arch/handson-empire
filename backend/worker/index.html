@@ -228,9 +228,14 @@
 
   <script>
     const TRADES = {
-      movers: '🚚', roofing: '🏠', hvac: '❄️', electrical: '⚡', plumbing: '🚰',
-      painting: '🎨', junk: '🗑️', solar: '☀️', landscaping: '🌳', dumpster: '🏗️',
-      storage: '📦', powerwash: '💦', trailer: '🚛'
+      // Core Services
+      assembly: '🔧', moving: '🚚', delivery: '📦', handyman: '🛠️', junk: '🗑️',
+      cleaning: '🧹', painting: '🎨', tvmount: '📺', garage: '🚗',
+      // Outdoor
+      landscaping: '🌳', fencing: '🏗️', gutters: '🏠', powerwash: '💦',
+      // Skilled Trades
+      electrical: '⚡', plumbing: '🚰', hvac: '❄️', roofing: '🔨', flooring: '🪵',
+      appliance: '🔌', solar: '☀️', dumpster: '🚛'
     };
 
     const app = {
@@ -481,12 +486,33 @@
               <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">Service Type *</label>
               <select id="leadTrade" required style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px;">
                 <option value="">Select service...</option>
-                <option value="assembly">Assembly</option>
-                <option value="moving">Moving</option>
-                <option value="delivery">Delivery</option>
-                <option value="handyman">Handyman</option>
-                <option value="junk">Junk Removal</option>
-                <option value="painting">Painting</option>
+                <optgroup label="Core Services">
+                  <option value="assembly">🔧 Assembly</option>
+                  <option value="moving">🚚 Moving</option>
+                  <option value="delivery">📦 Delivery</option>
+                  <option value="handyman">🛠️ Handyman</option>
+                  <option value="junk">🗑️ Junk Removal</option>
+                  <option value="cleaning">🧹 Cleaning</option>
+                  <option value="painting">🎨 Painting</option>
+                  <option value="tvmount">📺 TV Mounting</option>
+                  <option value="garage">🚗 Garage Organization</option>
+                </optgroup>
+                <optgroup label="Outdoor">
+                  <option value="landscaping">🌳 Landscaping</option>
+                  <option value="fencing">🏗️ Fencing</option>
+                  <option value="gutters">🏠 Gutters</option>
+                  <option value="powerwash">💦 Pressure Washing</option>
+                </optgroup>
+                <optgroup label="Skilled Trades">
+                  <option value="electrical">⚡ Electrical</option>
+                  <option value="plumbing">🚰 Plumbing</option>
+                  <option value="hvac">❄️ HVAC</option>
+                  <option value="roofing">🔨 Roofing</option>
+                  <option value="flooring">🪵 Flooring</option>
+                  <option value="appliance">🔌 Appliance Install</option>
+                  <option value="solar">☀️ Solar</option>
+                  <option value="dumpster">🚛 Dumpster Rental</option>
+                </optgroup>
               </select>
             </div>
             <div style="margin-bottom: 16px;">

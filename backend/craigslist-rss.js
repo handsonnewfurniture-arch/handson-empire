@@ -18,28 +18,114 @@ const CL_REGIONS = [
   'cosprings'
 ];
 
-// Service categories and their Craigslist search queries
+// Service categories and their Craigslist search queries - ALL 21 SERVICES
 const SEARCHES = [
-  // Direct service requests (labor gigs)
+  // ═══ CORE SERVICES ═══
+  // Assembly
   { category: 'lbg', query: 'furniture assembly', trade: 'assembly', priority: 'HOT' },
-  { category: 'lbg', query: 'moving help', trade: 'moving', priority: 'HOT' },
-  { category: 'lbg', query: 'handyman', trade: 'handyman', priority: 'HOT' },
-  { category: 'lbg', query: 'junk removal', trade: 'junk', priority: 'HOT' },
-  { category: 'lbg', query: 'delivery', trade: 'delivery', priority: 'WARM' },
+  { category: 'lbg', query: 'ikea assembly', trade: 'assembly', priority: 'HOT' },
+  { category: 'com', query: 'need assembly help', trade: 'assembly', priority: 'CRITICAL' },
 
-  // Free stuff that needs hauling (opportunity leads)
+  // Moving
+  { category: 'lbg', query: 'moving help', trade: 'moving', priority: 'HOT' },
+  { category: 'lbg', query: 'need movers', trade: 'moving', priority: 'HOT' },
+  { category: 'com', query: 'need help moving', trade: 'moving', priority: 'CRITICAL' },
+  { category: 'com', query: 'looking for mover', trade: 'moving', priority: 'CRITICAL' },
+  { category: 'fuo', query: 'you haul', trade: 'moving', priority: 'WARM' },
+
+  // Delivery
+  { category: 'lbg', query: 'delivery driver', trade: 'delivery', priority: 'WARM' },
+  { category: 'lbg', query: 'pickup delivery', trade: 'delivery', priority: 'WARM' },
+  { category: 'fuo', query: 'pickup only', trade: 'delivery', priority: 'WARM' },
+
+  // Handyman
+  { category: 'lbg', query: 'handyman', trade: 'handyman', priority: 'HOT' },
+  { category: 'lbg', query: 'odd jobs', trade: 'handyman', priority: 'WARM' },
+  { category: 'com', query: 'need handyman', trade: 'handyman', priority: 'CRITICAL' },
+
+  // Junk Removal
+  { category: 'lbg', query: 'junk removal', trade: 'junk', priority: 'HOT' },
+  { category: 'lbg', query: 'hauling', trade: 'junk', priority: 'WARM' },
   { category: 'zip', query: 'free couch', trade: 'junk', priority: 'WARM' },
   { category: 'zip', query: 'free furniture', trade: 'junk', priority: 'WARM' },
   { category: 'zip', query: 'curb alert', trade: 'junk', priority: 'WARM' },
 
-  // For sale - pickup only (delivery opportunity)
-  { category: 'fuo', query: 'pickup only', trade: 'delivery', priority: 'WARM' },
-  { category: 'fuo', query: 'you haul', trade: 'moving', priority: 'WARM' },
+  // Cleaning
+  { category: 'lbg', query: 'house cleaning', trade: 'cleaning', priority: 'HOT' },
+  { category: 'lbg', query: 'cleaning service', trade: 'cleaning', priority: 'WARM' },
+  { category: 'com', query: 'need cleaner', trade: 'cleaning', priority: 'CRITICAL' },
 
-  // Community posts seeking help
-  { category: 'com', query: 'need help moving', trade: 'moving', priority: 'CRITICAL' },
-  { category: 'com', query: 'looking for mover', trade: 'moving', priority: 'CRITICAL' },
-  { category: 'com', query: 'furniture assembly', trade: 'assembly', priority: 'HOT' },
+  // Painting
+  { category: 'lbg', query: 'painting help', trade: 'painting', priority: 'HOT' },
+  { category: 'lbg', query: 'painter needed', trade: 'painting', priority: 'HOT' },
+  { category: 'com', query: 'need painter', trade: 'painting', priority: 'CRITICAL' },
+
+  // TV Mounting
+  { category: 'lbg', query: 'tv mounting', trade: 'tvmount', priority: 'HOT' },
+  { category: 'lbg', query: 'mount tv', trade: 'tvmount', priority: 'HOT' },
+  { category: 'com', query: 'need tv mounted', trade: 'tvmount', priority: 'CRITICAL' },
+
+  // Garage Organization
+  { category: 'lbg', query: 'garage organization', trade: 'garage', priority: 'WARM' },
+  { category: 'lbg', query: 'garage shelving', trade: 'garage', priority: 'WARM' },
+
+  // ═══ OUTDOOR SERVICES ═══
+  // Landscaping
+  { category: 'lbg', query: 'landscaping', trade: 'landscaping', priority: 'HOT' },
+  { category: 'lbg', query: 'lawn care', trade: 'landscaping', priority: 'WARM' },
+  { category: 'lbg', query: 'yard work', trade: 'landscaping', priority: 'WARM' },
+  { category: 'com', query: 'need landscaper', trade: 'landscaping', priority: 'CRITICAL' },
+
+  // Fencing
+  { category: 'lbg', query: 'fence install', trade: 'fencing', priority: 'HOT' },
+  { category: 'lbg', query: 'fence repair', trade: 'fencing', priority: 'HOT' },
+  { category: 'com', query: 'need fence', trade: 'fencing', priority: 'CRITICAL' },
+
+  // Gutters
+  { category: 'lbg', query: 'gutter cleaning', trade: 'gutters', priority: 'HOT' },
+  { category: 'lbg', query: 'gutter repair', trade: 'gutters', priority: 'HOT' },
+
+  // Pressure Washing
+  { category: 'lbg', query: 'pressure washing', trade: 'powerwash', priority: 'HOT' },
+  { category: 'lbg', query: 'power washing', trade: 'powerwash', priority: 'HOT' },
+
+  // ═══ SKILLED TRADES ═══
+  // Electrical
+  { category: 'lbg', query: 'electrician', trade: 'electrical', priority: 'HOT' },
+  { category: 'lbg', query: 'electrical work', trade: 'electrical', priority: 'HOT' },
+  { category: 'com', query: 'need electrician', trade: 'electrical', priority: 'CRITICAL' },
+
+  // Plumbing
+  { category: 'lbg', query: 'plumber', trade: 'plumbing', priority: 'HOT' },
+  { category: 'lbg', query: 'plumbing help', trade: 'plumbing', priority: 'HOT' },
+  { category: 'com', query: 'need plumber', trade: 'plumbing', priority: 'CRITICAL' },
+
+  // HVAC
+  { category: 'lbg', query: 'hvac', trade: 'hvac', priority: 'HOT' },
+  { category: 'lbg', query: 'ac repair', trade: 'hvac', priority: 'HOT' },
+  { category: 'com', query: 'need hvac', trade: 'hvac', priority: 'CRITICAL' },
+
+  // Roofing
+  { category: 'lbg', query: 'roofing', trade: 'roofing', priority: 'HOT' },
+  { category: 'lbg', query: 'roof repair', trade: 'roofing', priority: 'HOT' },
+  { category: 'com', query: 'need roofer', trade: 'roofing', priority: 'CRITICAL' },
+
+  // Flooring
+  { category: 'lbg', query: 'flooring install', trade: 'flooring', priority: 'HOT' },
+  { category: 'lbg', query: 'hardwood floor', trade: 'flooring', priority: 'HOT' },
+  { category: 'lbg', query: 'tile install', trade: 'flooring', priority: 'HOT' },
+
+  // Appliance
+  { category: 'lbg', query: 'appliance install', trade: 'appliance', priority: 'HOT' },
+  { category: 'lbg', query: 'appliance repair', trade: 'appliance', priority: 'HOT' },
+
+  // Solar
+  { category: 'lbg', query: 'solar install', trade: 'solar', priority: 'HOT' },
+  { category: 'lbg', query: 'solar panel', trade: 'solar', priority: 'WARM' },
+
+  // Dumpster
+  { category: 'lbg', query: 'dumpster rental', trade: 'dumpster', priority: 'WARM' },
+  { category: 'lbg', query: 'roll off', trade: 'dumpster', priority: 'WARM' },
 ];
 
 // Simple XML parser for RSS (no dependency needed)
