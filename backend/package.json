@@ -25,14 +25,12 @@
     "@supabase/supabase-js": "^2.99.3",
     "axios": "^1.13.6",
     "cheerio": "^1.2.0",
-    "chrome-aws-lambda": "^10.1.0",
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
     "imap": "^0.8.19",
     "mailparser": "^3.9.5",
     "nodemailer": "^8.0.3",
-    "puppeteer-core": "^24.40.0",
     "twilio": "^5.13.0",
     "ws": "^8.19.0"
   }
