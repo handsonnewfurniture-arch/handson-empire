@@ -182,6 +182,10 @@ async function runScrape() {
 // Nextdoor parser
 const { checkEmails: checkNextdoor } = require('./nextdoor-parser.js');
 
+// National scraper
+const { runNationalScrape } = require('./national-scraper.js');
+const NATIONAL_INTERVAL = 4 * 60 * 60 * 1000; // Every 4 hours
+
 async function runNextdoorScan() {
   console.log(`\n🏘️ [${new Date().toLocaleTimeString()}] Checking Nextdoor emails...`);
   try {
@@ -198,20 +202,31 @@ async function runNextdoorScan() {
 console.log(`
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║            🤖 HANDSON AUTO-SCRAPER - RUNNING                             ║
-║            Scanning every 30 minutes for opportunities                   ║
-║            Sources: Reddit, Craigslist, Nextdoor emails                  ║
+║            Local scan: Every 30 minutes (Reddit, Nextdoor)               ║
+║            National scan: Every 4 hours (31 US cities)                   ║
 ║            CRITICAL leads will be emailed to you                         ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 `);
 
-// Run immediately
+// Run local scrape immediately
 runScrape();
 runNextdoorScan();
 
-// Then every 30 minutes
+// Run national scrape on startup too
+console.log('\n🇺🇸 Running initial national scan...');
+runNationalScrape().catch(e => console.log('National scan error:', e.message));
+
+// Local scrape every 30 minutes
 setInterval(() => {
   runScrape();
   runNextdoorScan();
 }, SCRAPE_INTERVAL);
 
-console.log('⏰ Next scan in 30 minutes. Press Ctrl+C to stop.\n');
+// National scrape every 4 hours
+setInterval(() => {
+  console.log('\n🇺🇸 Running scheduled national scan...');
+  runNationalScrape().catch(e => console.log('National scan error:', e.message));
+}, NATIONAL_INTERVAL);
+
+console.log('⏰ Local scan: every 30 min | National scan: every 4 hours\n');
+console.log('Press Ctrl+C to stop.\n');
