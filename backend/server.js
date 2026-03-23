@@ -23,7 +23,9 @@ app.use(cors());
 app.use(express.json());
 
 // Serve admin dashboard
-app.use(express.static(path.join(__dirname, '../admin')));
+app.get('/admin', (req, res) => {
+  res.sendFile(path.join(__dirname, 'admin.html'));
+});
 
 // ═══ SUPABASE SETUP ═══
 const supabase = createClient(
