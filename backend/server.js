@@ -223,6 +223,42 @@ app.post('/api/leads/:id/claim', async (req, res) => {
   }
 });
 
+// ─── WORKER SIGN UP ─────────────────────────────────────────────────────────
+app.post('/api/workers/signup', async (req, res) => {
+  try {
+    const { name, phone, email, trades, city, bio } = req.body;
+
+    if (!name || !phone || !trades || trades.length === 0) {
+      return res.status(400).json({ error: 'Name, phone, and at least one trade required' });
+    }
+
+    const { data, error } = await supabase
+      .from('handson_workers')
+      .insert([{
+        name,
+        phone,
+        email: email || null,
+        trades,
+        city: city || 'Denver',
+        bio: bio || '',
+        status: 'pending',
+        rating: 5.0,
+        jobs_completed: 0,
+        created_at: new Date().toISOString()
+      }])
+      .select()
+      .single();
+
+    if (error) throw error;
+
+    console.log(`👷 New worker signup: ${name} (${phone})`);
+    res.json({ success: true, worker: data });
+  } catch (error) {
+    console.error('Error signing up worker:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ─── GET WORKERS ─────────────────────────────────────────────────────────────
 app.get('/api/workers', async (req, res) => {
   try {

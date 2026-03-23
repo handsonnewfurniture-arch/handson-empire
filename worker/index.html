@@ -212,6 +212,7 @@
       <button class="filter-btn active" onclick="app.setFilter('all')">All</button>
       <button class="filter-btn" onclick="app.setFilter('CRITICAL')">Critical</button>
       <button class="filter-btn" onclick="app.setFilter('HOT')">Hot</button>
+      <button class="filter-btn" style="background: linear-gradient(135deg, #f97316, #ea580c); color: white; border: none;" onclick="app.showSubmitLead()">+ Submit Lead</button>
     </div>
 
     <div class="lead-list" id="leadList"></div>
@@ -464,6 +465,96 @@
         const audio = new Audio('data:audio/wav;base64,UklGRnoGAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQoGAACBhYqFbF1fdJivrJBhNjVgodDbq2EcBj+a2/LDciUFLIHO8tiJNwgZaLvt559NEAxQp+PwtmMcBjiR1/LMeSwFJHfH8N2QQAoUXrTp66hVFApGn+DyvmwhBSpz0fPTgjMGHGS57OihUBELTKXh8bllHAU2jdXyzn0vBCd6y/DalUMKE2G36+mjUxEKSKDf87tiIAUrctDz1YU2Bhxrt+3qp1oUC0yj4fK5ZRsFNojP8c5+MAUpds3w3JdFCxFeuuvpoFERCkaf4PK9bSAFK3HO8tiIMwYbZ7vu6qNVFAtNouHxt2IdBTaGzvLOfzEGJ3LM8d2URQsQXLrq6J9RFApGnt/yvW0hBSpwzfPXiTMGGmW67umjVBMJTKHh8bllHgU2hc/xzoA0Bihwy/LelUYMEVy66+mfURQKRp3e8r1uIgUrb8zy2Ik0BRpluu7so1UUCkug4PG4ZSAFNoPO8s+ANQYocMrz35VIDhFctOvpn1IVCkec3vK9cCMFK27M8tmINwUZY7rs6qVYFApKn9/yuWYiBTiCzvLPgTYHJ2/J8+CVSRERWrPr6aFTFgpFnN3yv3IkBSptyu3aiToGGmG46+ynWxgKSpzd8bppJAU6f83x0IA3CCZuyPPhlk0SEVmy6+mjVRYKRJrc8sB0JQUtaMnz24o4BRlft+vrrF8bCkib3PG8aSMFPHrM8dGAOAglbcj05ZpQExFYserkpFgYCkOZ2vLBeCYGLGXH8t6MPQYZXbTq7q5jHQpInNvyvW0jBT1xx/HUgz4IJWvG8+ecThYRV7Hq5KVaFwpCmNnyw3omBixi' +
         'xvLfji8GF1ux6+6wZiBKWJva8r5wJQU9b8bx1YQ+CSRpxPTnnlIZEFWv6eSnXBkKQJbZ8sR+KQYtX8by4I4xBhZYr+vwsmgjC1aX2PG+ciQFPG3F8daFPwkjaMPy6aJUGhFUrenkvl4aCj+U2fPFgCoHLV3E8uGOMgYWV63r8LNoIwtVlNbxv3QkBT1rxPHXhjwJI2bB8uqjVh0RU6vn5MBfGwo+kdnzx4IrBy1bwvLiiy8GFVWr6/K2aiYLU5HV8cB2JAU8acLx2Ic9CSRlv/Lrpladg==');
         audio.play().catch(() => {});
+      },
+
+      showSubmitLead() {
+        const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://handson-empire-production.up.railway.app';
+        document.getElementById('modalBody').innerHTML = `
+          <h2 style="margin-bottom: 20px; font-size: 20px;">Submit a Lead</h2>
+          <form id="submitLeadForm">
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">Title *</label>
+              <input type="text" id="leadTitle" placeholder="e.g., Need help moving furniture" required
+                style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px;" />
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">Service Type *</label>
+              <select id="leadTrade" required style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px;">
+                <option value="">Select service...</option>
+                <option value="assembly">Assembly</option>
+                <option value="moving">Moving</option>
+                <option value="delivery">Delivery</option>
+                <option value="handyman">Handyman</option>
+                <option value="junk">Junk Removal</option>
+                <option value="painting">Painting</option>
+              </select>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">City</label>
+              <input type="text" id="leadCity" placeholder="Denver" value="Denver"
+                style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px;" />
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">Customer Phone</label>
+              <input type="tel" id="leadPhone" placeholder="(720) 555-1234"
+                style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px;" />
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">Est. Value ($)</label>
+              <input type="number" id="leadRevenue" placeholder="150" value="150"
+                style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px;" />
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">Notes</label>
+              <textarea id="leadNotes" placeholder="Any additional details..."
+                style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px; min-height: 80px;"></textarea>
+            </div>
+            <div style="margin-bottom: 16px;">
+              <label style="display: block; font-size: 12px; color: #64748b; margin-bottom: 6px;">Priority</label>
+              <select id="leadPriority" style="width: 100%; background: #0a0f1a; border: 1px solid #1e293b; border-radius: 8px; padding: 12px; color: #f1f5f9; font-size: 14px;">
+                <option value="HOT">Hot</option>
+                <option value="CRITICAL">Critical</option>
+                <option value="WARM">Warm</option>
+              </select>
+            </div>
+            <button type="submit" class="claim-btn" style="width: 100%;">Submit Lead</button>
+          </form>
+        `;
+        document.getElementById('modal').classList.add('active');
+
+        document.getElementById('submitLeadForm').addEventListener('submit', async (e) => {
+          e.preventDefault();
+          const btn = e.target.querySelector('button');
+          btn.textContent = 'Submitting...';
+          btn.disabled = true;
+
+          const lead = {
+            title: document.getElementById('leadTitle').value,
+            trade: document.getElementById('leadTrade').value,
+            city: document.getElementById('leadCity').value || 'Denver',
+            phone: document.getElementById('leadPhone').value || null,
+            revenue: parseInt(document.getElementById('leadRevenue').value) || 150,
+            notes: document.getElementById('leadNotes').value || '',
+            priority: document.getElementById('leadPriority').value,
+            source: 'Manual Entry',
+            signal_type: 'MANUAL'
+          };
+
+          try {
+            const res = await fetch(apiUrl + '/api/leads', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(lead)
+            });
+            if (!res.ok) throw new Error('Failed to submit');
+            app.closeModal();
+            app.loadLeads();
+          } catch (err) {
+            alert('Error submitting lead: ' + err.message);
+            btn.textContent = 'Submit Lead';
+            btn.disabled = false;
+          }
+        });
       }
     };
 
