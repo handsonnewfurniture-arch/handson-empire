@@ -207,7 +207,7 @@ async function runNationalScrape() {
             </ul>
             ` : ''}
 
-            <a href="http://localhost:3000" style="display: inline-block; background: #f97316; color: white; padding: 12px 24px; border-radius: 8px; text-decoration: none; margin-top: 16px;">Open Dashboard →</a>
+            <p style="margin-top: 16px; color: #888;">Reply to this email or check Supabase for full lead details.</p>
           </div>
         `
       });
