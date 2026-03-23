@@ -182,6 +182,9 @@ async function runScrape() {
 // Nextdoor parser
 const { checkEmails: checkNextdoor } = require('./nextdoor-parser.js');
 
+// Craigslist RSS feeds (ToS-compliant)
+const { scrapeCraigslistRSS } = require('./craigslist-rss.js');
+
 // National scraper
 const { runNationalScrape } = require('./national-scraper.js');
 const NATIONAL_INTERVAL = 4 * 60 * 60 * 1000; // Every 4 hours
@@ -202,7 +205,7 @@ async function runNextdoorScan() {
 console.log(`
 ╔══════════════════════════════════════════════════════════════════════════╗
 ║            🤖 HANDSON AUTO-SCRAPER - RUNNING                             ║
-║            Local scan: Every 30 minutes (Reddit, Nextdoor)               ║
+║            Local scan: Every 30 min (Reddit, Nextdoor, Craigslist RSS)   ║
 ║            National scan: Every 4 hours (31 US cities)                   ║
 ║            CRITICAL leads will be emailed to you                         ║
 ╚══════════════════════════════════════════════════════════════════════════╝
@@ -211,6 +214,7 @@ console.log(`
 // Run local scrape immediately
 runScrape();
 runNextdoorScan();
+scrapeCraigslistRSS().catch(e => console.log('Craigslist RSS error:', e.message));
 
 // Run national scrape on startup too
 console.log('\n🇺🇸 Running initial national scan...');
@@ -220,6 +224,7 @@ runNationalScrape().catch(e => console.log('National scan error:', e.message));
 setInterval(() => {
   runScrape();
   runNextdoorScan();
+  scrapeCraigslistRSS().catch(e => console.log('Craigslist RSS error:', e.message));
 }, SCRAPE_INTERVAL);
 
 // National scrape every 4 hours
