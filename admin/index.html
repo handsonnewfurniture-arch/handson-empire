@@ -256,7 +256,10 @@
       },
 
       connectWebSocket() {
-        this.ws = new WebSocket('ws://localhost:3000');
+        const wsUrl = window.location.hostname === 'localhost'
+          ? 'ws://localhost:3000'
+          : 'wss://handson-empire-production.up.railway.app';
+        this.ws = new WebSocket(wsUrl);
 
         this.ws.onopen = () => console.log('🔌 Admin connected');
 
@@ -277,9 +280,12 @@
 
       async loadData() {
         try {
+          const apiUrl = window.location.hostname === 'localhost'
+            ? 'http://localhost:3000'
+            : 'https://handson-empire-production.up.railway.app';
           const [leadsRes, workersRes] = await Promise.all([
-            fetch('http://localhost:3000/api/leads'),
-            fetch('http://localhost:3000/api/workers')
+            fetch(`${apiUrl}/api/leads`),
+            fetch(`${apiUrl}/api/workers`)
           ]);
 
           const { leads } = await leadsRes.json();
