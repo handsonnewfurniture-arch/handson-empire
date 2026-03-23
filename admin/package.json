@@ -1,19 +1,12 @@
 {
-  "name": "admin",
+  "name": "handson-admin",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "HandsOn Empire Admin Dashboard",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "lucide-react": "^0.577.0",
-    "react": "^19.2.4",
-    "react-dom": "^19.2.4",
-    "recharts": "^3.8.0"
+    "express": "^4.18.2"
   }
 }

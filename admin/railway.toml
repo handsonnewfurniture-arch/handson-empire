@@ -1,0 +1,7 @@
+[build]
+builder = "nixpacks"
+watchPatterns = ["admin/**"]
+
+[deploy]
+startCommand = "node server.js"
+healthcheckPath = "/"
