@@ -30,6 +30,17 @@ app.get('/admin', (req, res) => {
 // Serve worker pages
 app.use('/worker', express.static(path.join(__dirname, 'worker')));
 
+// Explicit worker routes as fallback
+app.get('/worker/signup.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'worker', 'signup.html'));
+});
+app.get('/worker/index.html', (req, res) => {
+  res.sendFile(path.join(__dirname, 'worker', 'index.html'));
+});
+app.get('/worker/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'worker', 'index.html'));
+});
+
 // ═══ SUPABASE SETUP ═══
 const supabase = createClient(
   process.env.SUPABASE_URL || 'https://hzcgpuctetpfmxisehhe.supabase.co',
@@ -155,6 +166,11 @@ app.post('/api/leads', async (req, res) => {
   try {
     const leadData = req.body;
 
+    // Generate unique ID if not provided
+    if (!leadData.id) {
+      leadData.id = `lead-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    }
+
     // Score the lead
     const { score, priority } = scoreLead(leadData);
     leadData.score = score;
@@ -235,18 +251,22 @@ app.post('/api/workers/signup', async (req, res) => {
       return res.status(400).json({ error: 'Name, phone, and at least one trade required' });
     }
 
+    // Generate unique worker ID
+    const workerId = `w-${Date.now()}-${Math.random().toString(36).substr(2, 6)}`;
+
     const { data, error } = await supabase
       .from('handson_workers')
       .insert([{
+        id: workerId,
         name,
         phone,
         email: email || null,
         trades,
-        city: city || 'Denver',
+        address: city || 'Denver',
         bio: bio || '',
         status: 'pending',
         rating: 5.0,
-        jobs_completed: 0,
+        jobs: 0,
         created_at: new Date().toISOString()
       }])
       .select()
