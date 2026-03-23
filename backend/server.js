@@ -27,6 +27,9 @@ app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
 });
 
+// Serve worker pages
+app.use('/worker', express.static(path.join(__dirname, 'worker')));
+
 // ═══ SUPABASE SETUP ═══
 const supabase = createClient(
   process.env.SUPABASE_URL || 'https://hzcgpuctetpfmxisehhe.supabase.co',
