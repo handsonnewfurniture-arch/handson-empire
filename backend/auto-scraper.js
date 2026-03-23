@@ -9,6 +9,22 @@ const axios = require('axios');
 const cheerio = require('cheerio');
 const nodemailer = require('nodemailer');
 const { createClient } = require('@supabase/supabase-js');
+const http = require('http');
+
+// Health check server for Railway
+const PORT = process.env.PORT || 8080;
+const healthServer = http.createServer((req, res) => {
+  if (req.url === '/health') {
+    res.writeHead(200, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ status: 'ok', service: 'scraper', uptime: process.uptime() }));
+  } else {
+    res.writeHead(200, { 'Content-Type': 'text/plain' });
+    res.end('HandsOn Scraper Running');
+  }
+});
+healthServer.listen(PORT, () => {
+  console.log(`🏥 Health endpoint: http://localhost:${PORT}/health`);
+});
 
 // Config
 const SCRAPE_INTERVAL = 30 * 60 * 1000; // 30 minutes
