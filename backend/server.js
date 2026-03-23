@@ -109,6 +109,11 @@ async function sendCriticalAlert(lead, worker) {
 // API ROUTES
 // ═══════════════════════════════════════════════════════════════════════════
 
+// ─── ROOT ───────────────────────────────────────────────────────────────────
+app.get('/', (req, res) => {
+  res.json({ name: 'HandsOn Empire API', status: 'TURBO', version: '1.0' });
+});
+
 // ─── HEALTH CHECK ────────────────────────────────────────────────────────────
 app.get('/health', (req, res) => {
   res.json({
