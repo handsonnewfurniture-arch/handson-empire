@@ -5,6 +5,7 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
+    "start:scraper": "node auto-scraper.js",
     "dev": "nodemon server.js",
     "scrape": "node scraper.js",
     "test": "echo \"No tests yet\" && exit 0"
