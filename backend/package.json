@@ -9,7 +9,12 @@
     "scrape": "node scraper.js",
     "test": "echo \"No tests yet\" && exit 0"
   },
-  "keywords": ["lead-generation", "handson", "home-services", "denver"],
+  "keywords": [
+    "lead-generation",
+    "handson",
+    "home-services",
+    "denver"
+  ],
   "author": "Tiger McBride <handsonmovers303@gmail.com>",
   "license": "PROPRIETARY",
   "type": "commonjs",
@@ -24,6 +29,9 @@
     "cors": "^2.8.6",
     "dotenv": "^17.3.1",
     "express": "^5.2.1",
+    "imap": "^0.8.19",
+    "mailparser": "^3.9.5",
+    "nodemailer": "^8.0.3",
     "puppeteer-core": "^24.40.0",
     "twilio": "^5.13.0",
     "ws": "^8.19.0"

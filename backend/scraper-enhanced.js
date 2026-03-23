@@ -10,6 +10,7 @@ require('dotenv').config();
 const axios = require('axios');
 const cheerio = require('cheerio');
 const { createClient } = require('@supabase/supabase-js');
+const nodemailer = require('nodemailer');
 
 // ═══ CONFIGURATION ═══
 const supabase = createClient(
@@ -27,9 +28,51 @@ if (process.env.TWILIO_ACCOUNT_SID && process.env.TWILIO_AUTH_TOKEN) {
 const TWILIO_PHONE = process.env.TWILIO_PHONE || '+17744687657';
 const ALERT_PHONE = process.env.ALERT_PHONE || '+17208990383'; // Tiger's phone
 
+// ═══ EMAIL SETUP ═══
+const ALERT_EMAIL = process.env.ALERT_EMAIL || 'handsonnewfurniture@gmail.com';
+let emailTransporter = null;
+if (process.env.EMAIL_USER && process.env.EMAIL_PASS) {
+  emailTransporter = nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+  console.log('📧 Email alerts enabled');
+} else {
+  console.log('📧 Email alerts: Using fallback (no Gmail app password)');
+}
+
 const DENVER_CITIES = ['denver', 'aurora', 'lakewood', 'littleton', 'englewood',
                        'thornton', 'arvada', 'westminster', 'centennial', 'boulder'];
 
+// HandsOn Furniture core services
+const HANDSON_SERVICES = {
+  assembly: ['furniture assembly', 'assemble furniture', 'ikea assembly', 'put together', 'build furniture', 'assembly help', 'assemble ikea', 'assemble bed', 'assemble desk', 'assemble couch'],
+  moving: ['need movers', 'moving help', 'help moving', 'move furniture', 'moving company', 'help me move', 'need help moving', 'moving assistance', 'apartment move', 'loading help', 'unloading help'],
+  delivery: ['furniture delivery', 'pickup and delivery', 'need delivery', 'deliver furniture', 'haul furniture', 'transport furniture'],
+  handyman: ['handyman needed', 'need handyman', 'looking for handyman', 'mount tv', 'hang pictures', 'install shelves', 'minor repairs', 'odd jobs', 'honey do list']
+};
+
+// Intent signals - people ASKING for help
+const INTENT_SIGNALS = [
+  'need help', 'looking for', 'anyone know', 'recommendations', 'who do you use',
+  'can someone', 'hiring', 'need someone', 'iso', 'in search of', 'wanted',
+  'does anyone', 'any suggestions', 'help needed', 'need a', 'know any'
+];
+
+// OPPORTUNITY SIGNALS - People who likely NEED assembly/moving soon
+const OPPORTUNITY_KEYWORDS = {
+  // Furniture purchases = need assembly
+  furniture_buy: ['ikea', 'wayfair', 'ashley furniture', 'rooms to go', 'amazon furniture', 'target furniture', 'walmart furniture', 'costco furniture', 'desk', 'bed frame', 'dresser', 'bookshelf', 'couch', 'sofa', 'dining table', 'office chair', 'sectional'],
+  // Moving signals
+  moving: ['just moved', 'new apartment', 'moving to denver', 'relocating', 'new place', 'first apartment', 'move in', 'moving out', 'end of lease', 'new home'],
+  // Pickup needed (they bought something heavy)
+  pickup: ['pickup only', 'must pick up', 'local pickup', 'you haul', 'need truck', 'curb alert', 'free if you haul']
+};
+
+// Legacy trades for other lead types
 const TRADE_KEYWORDS = {
   movers: ['moving', 'move', 'relocate', 'furniture assembly', 'delivery'],
   storage: ['storage unit', 'storage clear', 'lien sale', 'unit auction'],
@@ -169,56 +212,310 @@ async function scrapeCraigslist(city = 'denver', trade = 'movers') {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SOURCE 10-12: REDDIT (r/Denver, r/DIY, r/HomeImprovement)
+// OPPORTUNITY SIGNALS - People buying furniture, moving, etc.
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function scrapeReddit(subreddit = 'Denver') {
-  console.log(`🕷️ [Reddit] Scraping r/${subreddit}...`);
+async function scrapeOpportunities() {
+  console.log('🎯 [Opportunities] Finding people who need assembly/moving...');
+  const leads = [];
 
+  // 1. Reddit - People posting about moving to Denver, new apartments, furniture purchases
+  const redditSearches = [
+    { sub: 'Denver', query: 'moving to denver', type: 'moving' },
+    { sub: 'Denver', query: 'new apartment', type: 'moving' },
+    { sub: 'Denver', query: 'just moved', type: 'moving' },
+    { sub: 'denverlist', query: 'furniture', type: 'furniture_buy' },
+    { sub: 'denverlist', query: 'ikea OR wayfair', type: 'furniture_buy' },
+    { sub: 'Denver', query: 'ikea pickup', type: 'pickup' },
+  ];
+
+  for (const search of redditSearches) {
+    try {
+      const url = `https://www.reddit.com/r/${search.sub}/search.json?q=${encodeURIComponent(search.query)}&restrict_sr=1&sort=new&t=week&limit=10`;
+      const { data } = await axios.get(url, {
+        headers: { 'User-Agent': 'HandsOnLeads/1.0' },
+        timeout: 10000
+      });
+
+      const posts = data?.data?.children || [];
+      posts.forEach((post, i) => {
+        const { title, selftext, permalink, created_utc, id: postId } = post.data;
+        const text = `${title} ${selftext || ''}`.toLowerCase();
+
+        // Check for opportunity keywords
+        let matchType = null;
+        let service = 'assembly';
+
+        for (const [type, keywords] of Object.entries(OPPORTUNITY_KEYWORDS)) {
+          if (keywords.some(kw => text.includes(kw))) {
+            matchType = type;
+            if (type === 'moving' || type === 'pickup') service = 'moving';
+            break;
+          }
+        }
+
+        if (matchType && !leads.some(l => l.id.includes(postId))) {
+          const smsTemplate = matchType === 'moving'
+            ? `Hi! Saw your post about moving. HandsOn does moving help, furniture assembly & delivery in Denver. Fast, reliable, fair prices. (720) 899-0383`
+            : `Hi! Need help with furniture assembly? HandsOn assembles IKEA, Wayfair, etc. Same-day service in Denver. (720) 899-0383`;
+
+          leads.push({
+            id: `opp-reddit-${postId}`,
+            trade: service,
+            source: `Reddit r/${search.sub}`,
+            signal_type: 'OPPORTUNITY',
+            title: title.substring(0, 100),
+            city: 'Denver',
+            state: 'CO',
+            signal_date: new Date(created_utc * 1000).toISOString().split('T')[0],
+            status: 'NEW',
+            score: 80,
+            priority: 'HOT',
+            urgency: 'this_week',
+            revenue: service === 'moving' ? 250 : 150,
+            signals: ['OPPORTUNITY', matchType.toUpperCase()],
+            phone: null,
+            address: '',
+            notes: `${matchType.toUpperCase()} SIGNAL: Person likely needs ${service} help. ${selftext?.substring(0, 100) || ''}`,
+            link: `https://reddit.com${permalink}`,
+            sms: smsTemplate
+          });
+        }
+      });
+
+      await delay(500);
+    } catch (e) {
+      console.log(`  ⚠️ ${search.sub}/${search.query}: ${e.message}`);
+    }
+  }
+
+  // 2. Craigslist furniture for sale (potential assembly customers if they're buying)
   try {
-    const url = `https://www.reddit.com/r/${subreddit}/new.json?limit=25`;
-
-    const { data } = await axios.get(url, {
-      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' },
+    const clUrl = 'https://denver.craigslist.org/search/fua?sort=date'; // furniture section
+    const { data } = await axios.get(clUrl, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36' },
       timeout: 15000
     });
 
-    const posts = data?.data?.children || [];
-    const leads = [];
+    const $ = cheerio.load(data);
+    const jsonLd = $('#ld_searchpage_results').html();
 
-    posts.forEach((post, i) => {
-      const { title, selftext, created_utc, permalink } = post.data;
-      const text = `${title} ${selftext}`.toLowerCase();
+    if (jsonLd) {
+      const items = JSON.parse(jsonLd)?.itemListElement || [];
 
-      // Check if mentions any trade
-      for (const [trade, keywords] of Object.entries(TRADE_KEYWORDS)) {
-        if (keywords.some(kw => text.includes(kw.toLowerCase()))) {
+      items.slice(0, 20).forEach((item, i) => {
+        const listing = item?.item;
+        if (!listing) return;
+
+        const title = listing.name || '';
+        const lower = title.toLowerCase();
+
+        // Look for NEW furniture (unassembled) or pickup opportunities
+        const isOpportunity =
+          lower.includes('new in box') ||
+          lower.includes('unassembled') ||
+          lower.includes('ikea') ||
+          lower.includes('wayfair') ||
+          lower.includes('pickup only') ||
+          lower.includes('must pick up') ||
+          lower.includes('you haul');
+
+        if (isOpportunity) {
           leads.push({
-            id: `reddit-${subreddit}-${Date.now()}-${i}`,
-            trade,
+            id: `opp-cl-${Date.now()}-${i}`,
+            trade: 'assembly',
+            source: 'Craigslist Denver Furniture',
+            signal_type: 'OPPORTUNITY',
+            title,
+            city: 'Denver',
+            state: 'CO',
+            signal_date: new Date().toISOString().split('T')[0],
+            status: 'NEW',
+            score: 75,
+            priority: 'WARM',
+            urgency: 'this_week',
+            revenue: 150,
+            signals: ['OPPORTUNITY', 'FURNITURE_SALE'],
+            phone: null,
+            address: '',
+            notes: 'Furniture listing - buyer may need assembly/delivery help',
+            link: listing.url || 'https://denver.craigslist.org',
+            sms: `Hi! Saw the furniture listing. HandsOn offers assembly & delivery in Denver. Can help pick up and build! (720) 899-0383`
+          });
+        }
+      });
+    }
+  } catch (e) {
+    console.log(`  ⚠️ CL Furniture: ${e.message}`);
+  }
+
+  console.log(`✅ [Opportunities] Found ${leads.length} opportunity signals`);
+  return leads;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// CRAIGSLIST LABOR GIGS - People posting jobs they need done!
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function scrapeCraigslistGigs(city = 'denver') {
+  console.log(`🕷️ [CL Gigs] Scraping ${city} labor/domestic gigs...`);
+
+  try {
+    // Search labor gigs AND domestic gigs (people posting jobs)
+    const sections = ['lbg', 'dmg']; // labor gigs, domestic gigs
+    const allLeads = [];
+
+    for (const section of sections) {
+      const url = `https://${city}.craigslist.org/search/${section}?sort=date`;
+
+      const { data } = await axios.get(url, {
+        headers: {
+          'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+          'Accept': 'text/html'
+        },
+        timeout: 15000
+      });
+
+      const $ = cheerio.load(data);
+
+      // Parse JSON-LD or HTML
+      const jsonLdScript = $('#ld_searchpage_results').html();
+      if (jsonLdScript) {
+        try {
+          const jsonData = JSON.parse(jsonLdScript);
+          const items = jsonData?.itemListElement || [];
+
+          items.slice(0, 20).forEach((item, i) => {
+            const listing = item?.item;
+            if (!listing) return;
+
+            const title = listing.name || '';
+            const titleLower = title.toLowerCase();
+
+            // Check if matches HandsOn services
+            let matchedService = null;
+            for (const [service, keywords] of Object.entries(HANDSON_SERVICES)) {
+              if (keywords.some(kw => titleLower.includes(kw))) {
+                matchedService = service;
+                break;
+              }
+            }
+
+            // Also check for intent signals even without exact keyword match
+            const hasIntent = INTENT_SIGNALS.some(sig => titleLower.includes(sig));
+
+            if (matchedService || (hasIntent && (titleLower.includes('furniture') || titleLower.includes('move') || titleLower.includes('assembl')))) {
+              const service = matchedService || 'handyman';
+              allLeads.push({
+                id: `clgig-${city}-${Date.now()}-${i}`,
+                trade: service,
+                source: `Craigslist ${city} Gigs`,
+                signal_type: 'DIRECT_REQUEST',
+                title,
+                city: city.charAt(0).toUpperCase() + city.slice(1),
+                state: 'CO',
+                signal_date: new Date().toISOString().split('T')[0],
+                status: 'NEW',
+                score: 95,
+                priority: 'CRITICAL',
+                urgency: 'immediate',
+                revenue: service === 'assembly' ? 150 : service === 'moving' ? 300 : 200,
+                signals: ['DIRECT_REQUEST', 'ACTIVE_BUYER'],
+                phone: null,
+                address: '',
+                notes: `ACTIVE GIG POST - Person needs ${service} help NOW`,
+                link: listing.url || `https://${city}.craigslist.org`,
+                sms: `Hi! Saw your Craigslist gig post. HandsOn does ${service} - fast, reliable, fair price. Available today. (720) 899-0383`
+              });
+            }
+          });
+        } catch (e) {
+          console.log(`⚠️ JSON parse failed for ${section}`);
+        }
+      }
+    }
+
+    console.log(`✅ [CL Gigs ${city}] Found ${allLeads.length} ACTIVE gig posts`);
+    return allLeads;
+
+  } catch (error) {
+    console.error(`❌ [CL Gigs ${city}] Error:`, error.message);
+    return [];
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SOURCE 10-12: REDDIT - Only posts where people ASK FOR HELP
+// ═══════════════════════════════════════════════════════════════════════════
+
+async function scrapeReddit(subreddit = 'Denver') {
+  console.log(`🕷️ [Reddit] Scraping r/${subreddit} for help requests...`);
+
+  try {
+    // Search for posts asking for recommendations
+    const searches = ['moving help', 'furniture assembly', 'handyman recommendations', 'need help moving'];
+    const allLeads = [];
+
+    for (const query of searches) {
+      const url = `https://www.reddit.com/r/${subreddit}/search.json?q=${encodeURIComponent(query)}&restrict_sr=1&sort=new&t=week&limit=10`;
+
+      const { data } = await axios.get(url, {
+        headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)' },
+        timeout: 15000
+      });
+
+      const posts = data?.data?.children || [];
+
+      posts.forEach((post, i) => {
+        const { title, selftext, created_utc, permalink, id: postId } = post.data;
+        const text = `${title} ${selftext}`.toLowerCase();
+
+        // MUST have an intent signal (asking for help)
+        const hasIntent = INTENT_SIGNALS.some(sig => text.includes(sig));
+        if (!hasIntent) return;
+
+        // Check which HandsOn service matches
+        let matchedService = null;
+        for (const [service, keywords] of Object.entries(HANDSON_SERVICES)) {
+          if (keywords.some(kw => text.includes(kw))) {
+            matchedService = service;
+            break;
+          }
+        }
+
+        if (matchedService) {
+          // Avoid duplicates
+          if (allLeads.some(l => l.id.includes(postId))) return;
+
+          allLeads.push({
+            id: `reddit-${subreddit}-${postId}`,
+            trade: matchedService,
             source: `Reddit r/${subreddit}`,
-            signal_type: 'SOCIAL_SIGNAL',
+            signal_type: 'HELP_REQUEST',
             title: post.data.title,
             city: 'Denver',
             state: 'CO',
             signal_date: new Date(created_utc * 1000).toISOString().split('T')[0],
             status: 'NEW',
-            revenue: estimateRevenue(trade),
+            score: 90,
+            priority: 'HOT',
             urgency: 'this_week',
-            signals: ['SOCIAL_SIGNAL', 'DIRECT_INTENT'],
+            revenue: matchedService === 'assembly' ? 150 : matchedService === 'moving' ? 300 : 200,
+            signals: ['HELP_REQUEST', 'INTENT_SIGNAL'],
             phone: null,
             address: '',
-            notes: selftext?.substring(0, 200) || '',
+            notes: selftext?.substring(0, 200) || 'User asking for recommendations',
             link: `https://reddit.com${permalink}`,
-            sms: `Hi! HandsOn ${trade} - saw your post on r/${subreddit}. We can help! Free quote. (720) 899-0383`
+            sms: `Hi! Saw your r/${subreddit} post looking for ${matchedService} help. HandsOn Furniture can help - fast, reliable. (720) 899-0383`
           });
-          break; // Only match one trade per post
         }
-      }
-    });
+      });
 
-    console.log(`✅ [Reddit r/${subreddit}] Found ${leads.length} leads`);
-    return leads;
+      await delay(500); // Rate limit Reddit
+    }
+
+    console.log(`✅ [Reddit r/${subreddit}] Found ${allLeads.length} help requests`);
+    return allLeads;
 
   } catch (error) {
     console.error(`❌ [Reddit r/${subreddit}] Error:`, error.message);
@@ -534,27 +831,80 @@ function estimateRevenue(trade) {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SMS ALERTS FOR CRITICAL LEADS
+// EMAIL & SMS ALERTS FOR CRITICAL LEADS
 // ═══════════════════════════════════════════════════════════════════════════
 
-async function sendCriticalLeadAlert(lead) {
+async function sendEmailAlert(lead) {
+  const htmlContent = `
+    <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 600px; margin: 0 auto; background: #0f1623; color: #f1f5f9; padding: 24px; border-radius: 12px;">
+      <div style="background: linear-gradient(135deg, #f97316, #ea580c); padding: 16px; border-radius: 8px; margin-bottom: 20px;">
+        <h1 style="margin: 0; font-size: 24px; color: white;">🔥 CRITICAL LEAD</h1>
+      </div>
+
+      <div style="background: #1e293b; padding: 16px; border-radius: 8px; margin-bottom: 16px;">
+        <h2 style="margin: 0 0 8px 0; color: #f97316;">${lead.trade?.toUpperCase() || 'SERVICE'}</h2>
+        <p style="margin: 0; font-size: 18px; color: #e2e8f0;">${lead.title}</p>
+        <p style="margin: 8px 0 0 0; color: #64748b;">${lead.source}</p>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 16px;">
+        <div style="background: #1e293b; padding: 12px; border-radius: 8px;">
+          <div style="font-size: 11px; color: #64748b;">EST. VALUE</div>
+          <div style="font-size: 20px; font-weight: 700; color: #22c55e;">$${lead.revenue?.toLocaleString() || 'TBD'}</div>
+        </div>
+        <div style="background: #1e293b; padding: 12px; border-radius: 8px;">
+          <div style="font-size: 11px; color: #64748b;">LOCATION</div>
+          <div style="font-size: 20px; font-weight: 700; color: #60a5fa;">${lead.city || 'Denver'}, ${lead.state || 'CO'}</div>
+        </div>
+      </div>
+
+      ${lead.link ? `<a href="${lead.link}" style="display: block; background: #f97316; color: white; text-align: center; padding: 14px; border-radius: 8px; text-decoration: none; font-weight: 700; margin-bottom: 16px;">View Original Post →</a>` : ''}
+
+      ${lead.sms ? `
+      <div style="background: #1e293b; padding: 16px; border-radius: 8px;">
+        <div style="font-size: 11px; color: #64748b; margin-bottom: 8px;">📱 READY-TO-SEND SMS:</div>
+        <div style="background: #0a0f1a; padding: 12px; border-radius: 6px; color: #94a3b8; font-size: 14px;">${lead.sms}</div>
+      </div>
+      ` : ''}
+    </div>
+  `;
+
+  // Try nodemailer first, fall back to console log
+  if (emailTransporter) {
+    try {
+      await emailTransporter.sendMail({
+        from: process.env.EMAIL_USER,
+        to: ALERT_EMAIL,
+        subject: `🔥 CRITICAL: ${lead.trade?.toUpperCase()} Lead - $${lead.revenue?.toLocaleString() || 'TBD'} - ${lead.city || 'Denver'}`,
+        html: htmlContent
+      });
+      console.log(`📧 Email alert sent for: ${lead.title}`);
+      return true;
+    } catch (error) {
+      console.error(`❌ Email alert failed:`, error.message);
+    }
+  }
+
+  // Fallback: Log the alert details
+  console.log(`📧 [EMAIL ALERT] ${lead.trade?.toUpperCase()} - $${lead.revenue} - ${lead.title}`);
+  return false;
+}
+
+async function sendSMSAlert(lead) {
   if (!twilioClient) {
-    console.log(`⚠️ Twilio not configured - would send alert for: ${lead.title}`);
-    return;
+    return false;
   }
 
   try {
     const message = `🔥 CRITICAL LEAD 🔥
 
-${lead.trade.toUpperCase()} - ${lead.source}
+${lead.trade?.toUpperCase() || 'SERVICE'} - ${lead.source}
 "${lead.title}"
 
 💰 Est. Value: $${lead.revenue?.toLocaleString() || 'TBD'}
-📍 ${lead.city}, ${lead.state}
-⚡ Priority: ${lead.priority}
+📍 ${lead.city || 'Denver'}, ${lead.state || 'CO'}
 
-📱 Ready SMS:
-${lead.sms}
+${lead.link ? `Link: ${lead.link}` : ''}
 
 Claim now in HandsOn Empire!`;
 
@@ -565,8 +915,10 @@ Claim now in HandsOn Empire!`;
     });
 
     console.log(`📱 SMS alert sent for: ${lead.title}`);
+    return true;
   } catch (error) {
     console.error(`❌ SMS alert failed:`, error.message);
+    return false;
   }
 }
 
@@ -578,10 +930,15 @@ async function alertCriticalLeads(leads) {
     return;
   }
 
-  console.log(`📱 Sending ${criticalLeads.length} CRITICAL lead alerts...`);
+  console.log(`📧 Sending ${criticalLeads.length} CRITICAL lead alerts...`);
 
   for (const lead of criticalLeads.slice(0, 5)) { // Max 5 alerts per run
-    await sendCriticalLeadAlert(lead);
+    // Send email (primary - works)
+    await sendEmailAlert(lead);
+
+    // Try SMS (may fail due to A2P restrictions)
+    await sendSMSAlert(lead);
+
     await delay(1000); // Rate limit
   }
 }
@@ -623,25 +980,31 @@ async function saveLeads(leads) {
 async function runAllScrapers() {
   console.log(`
 ╔══════════════════════════════════════════════════════════════════════════╗
-║           🕷️  HANDSON EMPIRE - ENHANCED SCRAPER v2.0 🕷️                ║
-║                         37 DATA SOURCES                                  ║
+║      🕷️  HANDSON EMPIRE - FOCUSED LEAD SCRAPER v3.0 🕷️                  ║
+║           Finding people who NEED furniture/moving help                  ║
 ╚══════════════════════════════════════════════════════════════════════════╝
   `);
 
   const allLeads = [];
   const startTime = Date.now();
 
-  // 1-9: Craigslist (9 cities × movers)
-  console.log('\n📍 GROUP 1: CRAIGSLIST (9 cities)');
-  for (const city of ['denver', 'aurora', 'boulder']) {
-    const leads = await scrapeCraigslist(city, 'movers');
+  // PRIORITY 1: Opportunity Signals - People buying furniture, moving, etc.
+  console.log('\n🎯 PRIORITY 1: OPPORTUNITY SIGNALS');
+  console.log('   Finding people buying furniture, moving to Denver, etc...');
+  const oppLeads = await scrapeOpportunities();
+  allLeads.push(...oppLeads);
+
+  // PRIORITY 2: Craigslist Labor Gigs - Active job posts
+  console.log('\n🔥 PRIORITY 2: CRAIGSLIST LABOR GIGS');
+  for (const city of ['denver', 'boulder']) {
+    const leads = await scrapeCraigslistGigs(city);
     allLeads.push(...leads);
-    await delay(2000); // Rate limiting
+    await delay(2000);
   }
 
-  // 10-12: Reddit (3 subreddits)
-  console.log('\n📍 GROUP 2: REDDIT (3 subreddits)');
-  for (const sub of ['Denver', 'DIY', 'HomeImprovement']) {
+  // PRIORITY 3: Reddit - People asking for help
+  console.log('\n💬 PRIORITY 3: REDDIT HELP REQUESTS');
+  for (const sub of ['Denver', 'denverlist']) {
     const leads = await scrapeReddit(sub);
     allLeads.push(...leads);
     await delay(2000);

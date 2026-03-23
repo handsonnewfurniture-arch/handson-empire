@@ -8,6 +8,7 @@
 require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
 const twilio = require('twilio');
 const WebSocket = require('ws');
@@ -20,6 +21,9 @@ const wss = new WebSocket.Server({ server });
 
 app.use(cors());
 app.use(express.json());
+
+// Serve admin dashboard
+app.use(express.static(path.join(__dirname, '../admin')));
 
 // ═══ SUPABASE SETUP ═══
 const supabase = createClient(
