@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - HandsOn Worker</title>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <style>
+    .main {
+      padding: 20px 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Welcome Section */
+    .welcome-card {
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .welcome-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.2);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: white;
+      flex-shrink: 0;
+    }
+
+    .welcome-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .welcome-info {
+      flex: 1;
+      color: white;
+    }
+
+    .welcome-name {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .welcome-stats {
+      display: flex;
+      gap: 16px;
+      font-size: 13px;
+      opacity: 0.9;
+    }
+
+    .welcome-stat {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .quick-action {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      text-decoration: none;
+    }
+
+    .quick-action:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .quick-action-icon {
+      font-size: 24px;
+      margin-bottom: 6px;
+    }
+
+    .quick-action-label {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    /* Earnings Card */
+    .earnings-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .earnings-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 20px;
+    }
+
+    .earnings-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .earnings-link {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .earnings-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .earnings-stat {
+      text-align: center;
+    }
+
+    .earnings-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .earnings-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    .stripe-status {
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .stripe-badge {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+    }
+
+    .stripe-badge-icon {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .stripe-badge-icon.active {
+      background: var(--success);
+    }
+
+    .stripe-badge-icon.inactive {
+      background: var(--warning);
+    }
+
+    /* Section Header */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+
+    .section-link {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    /* Tab Navigation */
+    .tab-nav {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+    }
+
+    .tab-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 16px;
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all var(--transition-fast);
+    }
+
+    .tab-btn:hover {
+      border-color: var(--text-muted);
+    }
+
+    .tab-btn.active {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* Job Cards */
+    .jobs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .job-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      text-decoration: none;
+    }
+
+    .job-card:hover {
+      border-color: var(--accent);
+    }
+
+    .job-header {
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .job-icon {
+      font-size: 32px;
+      flex-shrink: 0;
+    }
+
+    .job-info {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .job-title-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .job-title {
+      font-size: 14px;
+      font-weight: 600;
+    }
+
+    .job-status {
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+    }
+
+    .status-pending { background: var(--warning-light); color: var(--warning); }
+    .status-accepted { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .status-in_progress { background: var(--accent-light); color: var(--accent); }
+    .status-completed { background: var(--success-light); color: var(--success); }
+    .status-paid { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+
+    .job-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .job-price {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    .job-customer {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding-top: 12px;
+      border-top: 1px solid var(--border);
+    }
+
+    .customer-avatar {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .customer-info {
+      flex: 1;
+    }
+
+    .customer-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .customer-location {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    .job-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .job-action-btn {
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all var(--transition-fast);
+    }
+
+    .job-action-btn.primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .job-action-btn.primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .job-action-btn.secondary {
+      background: var(--border);
+      color: var(--text-secondary);
+    }
+
+    .job-action-btn.secondary:hover {
+      background: var(--text-dark);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* Dropdown */
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      min-width: 180px;
+      padding: 8px;
+      z-index: 100;
+      display: none;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .dropdown-menu.active {
+      display: block;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .dropdown-item:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0;
+    }
+
+    .user-menu-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+    }
+
+    .user-menu-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .user-menu-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .user-menu-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .quick-actions {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .earnings-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+      }
+
+      .earnings-value {
+        font-size: 1.25rem;
+      }
+
+      .welcome-stats {
+        flex-direction: column;
+        gap: 4px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/worker/" class="logo">HandsOn Worker</a>
+      <div class="dropdown">
+        <button class="user-menu-btn" onclick="toggleMenu()">
+          <div class="user-menu-avatar" id="headerAvatar">?</div>
+          <span class="user-menu-name hide-mobile" id="headerName">Loading...</span>
+        </button>
+        <div class="dropdown-menu" id="userMenu">
+          <div class="dropdown-item" onclick="location.href='/worker/profile.html'">
+            <span>👤</span> Profile
+          </div>
+          <div class="dropdown-item" onclick="location.href='/worker/portfolio.html'">
+            <span>📷</span> Portfolio
+          </div>
+          <div class="dropdown-item" onclick="location.href='/worker/earnings.html'">
+            <span>💰</span> Earnings
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="logout()">
+            <span>🚪</span> Sign Out
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Welcome Card -->
+    <div class="welcome-card">
+      <div class="welcome-avatar" id="welcomeAvatar">?</div>
+      <div class="welcome-info">
+        <div class="welcome-name" id="welcomeName">Welcome!</div>
+        <div class="welcome-stats">
+          <div class="welcome-stat">
+            <span>⭐</span>
+            <span id="welcomeRating">5.0</span>
+          </div>
+          <div class="welcome-stat">
+            <span>🛠️</span>
+            <span id="welcomeJobs">0 jobs</span>
+          </div>
+          <div class="welcome-stat">
+            <span>💰</span>
+            <span id="welcomeEarnings">$0 earned</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <a href="/worker/" class="quick-action">
+        <div class="quick-action-icon">📋</div>
+        <div class="quick-action-label">Lead Feed</div>
+      </a>
+      <a href="/worker/jobs.html" class="quick-action">
+        <div class="quick-action-icon">🔧</div>
+        <div class="quick-action-label">My Jobs</div>
+      </a>
+      <a href="/worker/portfolio.html" class="quick-action">
+        <div class="quick-action-icon">📷</div>
+        <div class="quick-action-label">Portfolio</div>
+      </a>
+      <a href="/worker/earnings.html" class="quick-action">
+        <div class="quick-action-icon">💰</div>
+        <div class="quick-action-label">Earnings</div>
+      </a>
+    </div>
+
+    <!-- Earnings Summary -->
+    <div class="earnings-card">
+      <div class="earnings-header">
+        <h2 class="earnings-title">Earnings</h2>
+        <a href="/worker/earnings.html" class="earnings-link">View Details</a>
+      </div>
+      <div class="earnings-grid">
+        <div class="earnings-stat">
+          <div class="earnings-value" id="earningsWeek">$0</div>
+          <div class="earnings-label">This Week</div>
+        </div>
+        <div class="earnings-stat">
+          <div class="earnings-value" id="earningsMonth">$0</div>
+          <div class="earnings-label">This Month</div>
+        </div>
+        <div class="earnings-stat">
+          <div class="earnings-value" id="earningsTotal">$0</div>
+          <div class="earnings-label">Total</div>
+        </div>
+      </div>
+      <div class="stripe-status">
+        <div class="stripe-badge">
+          <div class="stripe-badge-icon" id="stripeIcon"></div>
+          <span id="stripeStatus">Checking...</span>
+        </div>
+        <a href="#" id="stripeAction" class="section-link" onclick="handleStripeAction(event)">Set up</a>
+      </div>
+    </div>
+
+    <!-- Active Jobs -->
+    <div class="section-header">
+      <h2 class="section-title">Active Jobs</h2>
+      <a href="/worker/jobs.html" class="section-link">View All</a>
+    </div>
+
+    <div class="tab-nav">
+      <button class="tab-btn active" onclick="filterJobs('all')">All</button>
+      <button class="tab-btn" onclick="filterJobs('pending')">New</button>
+      <button class="tab-btn" onclick="filterJobs('accepted')">Accepted</button>
+      <button class="tab-btn" onclick="filterJobs('in_progress')">In Progress</button>
+    </div>
+
+    <div class="jobs-list" id="jobsList">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">No active jobs</div>
+        <div class="empty-text">Check the lead feed for new opportunities</div>
+        <a href="/worker/" class="btn btn-primary">View Lead Feed</a>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const TRADES = {
+      assembly: '🔧', moving: '🚚', delivery: '📦', handyman: '🛠️', junk: '🗑️',
+      cleaning: '🧹', painting: '🎨', tvmount: '📺', garage: '🚗',
+      landscaping: '🌳', fencing: '🏗️', gutters: '🏠', powerwash: '💦',
+      electrical: '⚡', plumbing: '🚰', hvac: '❄️', roofing: '🔨', flooring: '🪵',
+      appliance: '🔌', solar: '☀️', dumpster: '🚛'
+    };
+
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+
+    let user = null;
+    let jobs = [];
+    let currentFilter = 'all';
+
+    async function init() {
+      const token = localStorage.getItem('handson_token');
+      if (!token) {
+        window.location.href = '/worker/signup.html';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('Session expired');
+
+        const data = await res.json();
+        user = data.user;
+
+        if (user.userType !== 'worker') {
+          window.location.href = '/customer/dashboard.html';
+          return;
+        }
+
+        updateUI();
+        loadJobs();
+        loadEarnings();
+
+      } catch (error) {
+        console.error('Auth error:', error);
+        localStorage.removeItem('handson_token');
+        window.location.href = '/worker/signup.html';
+      }
+    }
+
+    function updateUI() {
+      if (!user) return;
+
+      const initial = user.name ? user.name[0].toUpperCase() : '?';
+
+      document.getElementById('headerAvatar').textContent = initial;
+      document.getElementById('headerName').textContent = user.name || 'Worker';
+      document.getElementById('welcomeAvatar').textContent = initial;
+      document.getElementById('welcomeName').textContent = `Hey, ${user.name?.split(' ')[0] || 'there'}!`;
+      document.getElementById('welcomeRating').textContent = user.rating?.toFixed(1) || '5.0';
+      document.getElementById('welcomeJobs').textContent = `${user.jobs || 0} jobs`;
+      document.getElementById('welcomeEarnings').textContent = `$${(user.total_earnings || 0).toLocaleString()} earned`;
+
+      // Stripe status
+      const stripeIcon = document.getElementById('stripeIcon');
+      const stripeStatus = document.getElementById('stripeStatus');
+      const stripeAction = document.getElementById('stripeAction');
+
+      if (user.stripe_onboarded) {
+        stripeIcon.classList.add('active');
+        stripeStatus.textContent = 'Payments active';
+        stripeAction.textContent = 'Dashboard';
+        stripeAction.onclick = (e) => openStripeDashboard(e);
+      } else if (user.stripe_account_id) {
+        stripeIcon.classList.add('inactive');
+        stripeStatus.textContent = 'Complete setup';
+        stripeAction.textContent = 'Continue';
+      } else {
+        stripeIcon.classList.add('inactive');
+        stripeStatus.textContent = 'Not set up';
+        stripeAction.textContent = 'Set up payments';
+      }
+    }
+
+    async function loadJobs() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/jobs`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const data = await res.json();
+        jobs = data.jobs || [];
+
+        renderJobs();
+
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+      }
+    }
+
+    async function loadEarnings() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/payments/worker/earnings`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const { earnings } = await res.json();
+
+        if (earnings) {
+          document.getElementById('earningsWeek').textContent = `$${earnings.thisWeek?.toLocaleString() || 0}`;
+          document.getElementById('earningsMonth').textContent = `$${earnings.thisMonth?.toLocaleString() || 0}`;
+          document.getElementById('earningsTotal').textContent = `$${earnings.total?.toLocaleString() || 0}`;
+        }
+
+      } catch (error) {
+        console.error('Error loading earnings:', error);
+      }
+    }
+
+    function filterJobs(status) {
+      currentFilter = status;
+      document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(status === 'all' ? 'all' : status.replace('_', ' ')));
+      });
+      renderJobs();
+    }
+
+    function renderJobs() {
+      const container = document.getElementById('jobsList');
+      const activeStatuses = ['pending', 'accepted', 'in_progress', 'completed'];
+
+      let filtered = jobs.filter(j => activeStatuses.includes(j.status));
+
+      if (currentFilter !== 'all') {
+        filtered = filtered.filter(j => j.status === currentFilter);
+      }
+
+      if (filtered.length === 0) {
+        container.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">📋</div>
+            <div class="empty-title">No ${currentFilter === 'all' ? 'active' : currentFilter.replace('_', ' ')} jobs</div>
+            <div class="empty-text">Check the lead feed for new opportunities</div>
+            <a href="/worker/" class="btn btn-primary">View Lead Feed</a>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = filtered.map(job => `
+        <div class="job-card" onclick="location.href='/worker/job.html?id=${job.id}'">
+          <div class="job-header">
+            <div class="job-icon">${TRADES[job.trade] || '📋'}</div>
+            <div class="job-info">
+              <div class="job-title-row">
+                <span class="job-title">${capitalize(job.trade)} Job</span>
+                <span class="job-status status-${job.status}">${formatStatus(job.status)}</span>
+              </div>
+              <div class="job-meta">${job.city || 'Denver'} • ${formatDate(job.created_at)}</div>
+            </div>
+            <div class="job-price">${job.total_price ? `$${job.total_price}` : 'TBD'}</div>
+          </div>
+          ${job.customer ? `
+            <div class="job-customer">
+              <div class="customer-avatar">${job.customer.name?.[0] || '?'}</div>
+              <div class="customer-info">
+                <div class="customer-name">${job.customer.name || 'Customer'}</div>
+                <div class="customer-location">${job.address || job.city || 'Denver, CO'}</div>
+              </div>
+              ${renderJobActions(job)}
+            </div>
+          ` : ''}
+        </div>
+      `).join('');
+    }
+
+    function renderJobActions(job) {
+      if (job.status === 'pending') {
+        return `
+          <div class="job-actions">
+            <button class="job-action-btn secondary" onclick="event.stopPropagation();declineJob('${job.id}')">Decline</button>
+            <button class="job-action-btn primary" onclick="event.stopPropagation();acceptJob('${job.id}')">Accept</button>
+          </div>
+        `;
+      }
+      if (job.status === 'accepted') {
+        return `
+          <div class="job-actions">
+            <button class="job-action-btn primary" onclick="event.stopPropagation();startJob('${job.id}')">Start Job</button>
+          </div>
+        `;
+      }
+      if (job.status === 'in_progress') {
+        return `
+          <div class="job-actions">
+            <button class="job-action-btn primary" onclick="event.stopPropagation();location.href='/worker/job.html?id=${job.id}'">Complete</button>
+          </div>
+        `;
+      }
+      return '';
+    }
+
+    async function acceptJob(id) {
+      const token = localStorage.getItem('handson_token');
+      try {
+        await fetch(`${API_URL}/api/jobs/${id}/accept`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        loadJobs();
+      } catch (error) {
+        alert('Error accepting job');
+      }
+    }
+
+    async function declineJob(id) {
+      if (!confirm('Are you sure you want to decline this job?')) return;
+      const token = localStorage.getItem('handson_token');
+      try {
+        await fetch(`${API_URL}/api/jobs/${id}/decline`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        loadJobs();
+      } catch (error) {
+        alert('Error declining job');
+      }
+    }
+
+    async function startJob(id) {
+      const token = localStorage.getItem('handson_token');
+      try {
+        await fetch(`${API_URL}/api/jobs/${id}/start`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        loadJobs();
+      } catch (error) {
+        alert('Error starting job');
+      }
+    }
+
+    async function handleStripeAction(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/payments/stripe-onboard`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const { url } = await res.json();
+        if (url) {
+          window.location.href = url;
+        }
+      } catch (error) {
+        alert('Error setting up payments');
+      }
+    }
+
+    async function openStripeDashboard(e) {
+      e.preventDefault();
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/payments/stripe-dashboard`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const { url } = await res.json();
+        if (url) {
+          window.open(url, '_blank');
+        }
+      } catch (error) {
+        alert('Error opening Stripe dashboard');
+      }
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function formatStatus(status) {
+      const map = {
+        pending: 'New',
+        accepted: 'Accepted',
+        in_progress: 'In Progress',
+        completed: 'Completed',
+        paid: 'Paid'
+      };
+      return map[status] || status;
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diff = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+      if (diff === 0) return 'Today';
+      if (diff === 1) return 'Yesterday';
+      if (diff < 7) return `${diff} days ago`;
+
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function toggleMenu() {
+      document.getElementById('userMenu').classList.toggle('active');
+    }
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown')) {
+        document.getElementById('userMenu').classList.remove('active');
+      }
+    });
+
+    function logout() {
+      localStorage.removeItem('handson_token');
+      localStorage.removeItem('handson_user');
+      window.location.href = '/worker/signup.html';
+    }
+
+    init();
+  </script>
+  <script src="/shared/components.js"></script>
+</body>
+</html>

@@ -238,6 +238,13 @@
       appliance: '🔌', solar: '☀️', dumpster: '🚛'
     };
 
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+    const WS_URL = window.location.hostname === 'localhost'
+      ? 'ws://localhost:3000'
+      : window.location.origin.replace('http', 'ws');
+
     const app = {
       leads: [],
       claimed: {},
@@ -256,7 +263,7 @@
       },
 
       connectWebSocket() {
-        this.ws = new WebSocket('ws://localhost:3000');
+        this.ws = new WebSocket(WS_URL);
 
         this.ws.onopen = () => {
           console.log('🔌 WebSocket connected');
@@ -287,7 +294,7 @@
 
       async loadLeads() {
         try {
-          const res = await fetch('http://localhost:3000/api/leads');
+          const res = await fetch(API_URL + '/api/leads');
           const { leads } = await res.json();
           this.leads = leads || [];
           this.render();
@@ -444,7 +451,7 @@
 
       async claimLead(id) {
         try {
-          const res = await fetch(`http://localhost:3000/api/leads/${id}/claim`, {
+          const res = await fetch(`${API_URL}/api/leads/${id}/claim`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ worker_id: 'w1' }) // Would be dynamic in production
@@ -473,7 +480,6 @@
       },
 
       showSubmitLead() {
-        const apiUrl = window.location.hostname === 'localhost' ? 'http://localhost:3000' : 'https://handson-empire-production.up.railway.app';
         document.getElementById('modalBody').innerHTML = `
           <h2 style="margin-bottom: 20px; font-size: 20px;">Submit a Lead</h2>
           <form id="submitLeadForm">
@@ -567,7 +573,7 @@
           };
 
           try {
-            const res = await fetch(apiUrl + '/api/leads', {
+            const res = await fetch(API_URL + '/api/leads', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify(lead)
@@ -586,5 +592,6 @@
 
     app.init();
   </script>
+  <script src="/shared/components.js"></script>
 </body>
 </html>

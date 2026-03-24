@@ -1,0 +1,720 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard - HandsOn</title>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <style>
+    .main {
+      padding: 20px 16px;
+      max-width: 900px;
+      margin: 0 auto;
+    }
+
+    /* Welcome Section */
+    .welcome {
+      margin-bottom: 24px;
+    }
+
+    .welcome-greeting {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .welcome-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Quick Actions */
+    .quick-actions {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .action-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      text-decoration: none;
+    }
+
+    .action-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .action-card-primary {
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      border: none;
+    }
+
+    .action-card-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-accent);
+    }
+
+    .action-icon {
+      font-size: 32px;
+      margin-bottom: 8px;
+    }
+
+    .action-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-primary);
+    }
+
+    .action-card-primary .action-title {
+      color: white;
+    }
+
+    /* Stats */
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* Section Headers */
+    .section-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .section-title {
+      font-size: 1rem;
+      font-weight: 700;
+    }
+
+    .section-link {
+      font-size: 13px;
+      color: var(--accent);
+      text-decoration: none;
+    }
+
+    .section-link:hover {
+      text-decoration: underline;
+    }
+
+    /* Job Cards */
+    .jobs-list {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      margin-bottom: 32px;
+    }
+
+    .job-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      display: flex;
+      gap: 14px;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+      text-decoration: none;
+    }
+
+    .job-card:hover {
+      border-color: var(--accent);
+    }
+
+    .job-icon {
+      font-size: 36px;
+      flex-shrink: 0;
+    }
+
+    .job-content {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .job-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .job-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .job-status {
+      padding: 2px 8px;
+      border-radius: var(--radius-sm);
+      font-size: 10px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-pending {
+      background: var(--warning-light);
+      color: var(--warning);
+    }
+
+    .status-accepted {
+      background: rgba(59, 130, 246, 0.15);
+      color: #3b82f6;
+    }
+
+    .status-in_progress {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .status-completed {
+      background: var(--success-light);
+      color: var(--success);
+    }
+
+    .status-paid {
+      background: rgba(139, 92, 246, 0.15);
+      color: #8b5cf6;
+    }
+
+    .job-meta {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .job-price {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--accent);
+      text-align: right;
+    }
+
+    .job-worker {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid var(--border);
+    }
+
+    .worker-avatar {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .worker-info {
+      flex: 1;
+    }
+
+    .worker-name {
+      font-size: 13px;
+      font-weight: 600;
+    }
+
+    .worker-rating {
+      font-size: 11px;
+      color: var(--warning);
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 40px 20px;
+      background: var(--bg-card);
+      border: 1px dashed var(--border);
+      border-radius: var(--radius-lg);
+    }
+
+    .empty-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 16px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-text {
+      font-size: 14px;
+      color: var(--text-muted);
+      margin-bottom: 20px;
+    }
+
+    /* Profile Section */
+    .profile-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      margin-bottom: 24px;
+    }
+
+    .profile-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+
+    .profile-avatar {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 24px;
+      font-weight: 800;
+      color: white;
+    }
+
+    .profile-avatar img {
+      width: 100%;
+      height: 100%;
+      border-radius: 50%;
+      object-fit: cover;
+    }
+
+    .profile-info {
+      flex: 1;
+    }
+
+    .profile-name {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+
+    .profile-phone {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .profile-rating {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      color: var(--warning);
+      margin-top: 4px;
+    }
+
+    /* User Menu */
+    .user-menu-btn {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .user-menu-btn:hover {
+      border-color: var(--accent);
+    }
+
+    .user-menu-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .user-menu-name {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+    }
+
+    /* Dropdown Menu */
+    .dropdown {
+      position: relative;
+    }
+
+    .dropdown-menu {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 8px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      min-width: 180px;
+      padding: 8px;
+      z-index: 100;
+      display: none;
+      box-shadow: var(--shadow-lg);
+    }
+
+    .dropdown-menu.active {
+      display: block;
+    }
+
+    .dropdown-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      border-radius: var(--radius-md);
+      font-size: 13px;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all var(--transition-fast);
+    }
+
+    .dropdown-item:hover {
+      background: var(--accent-light);
+      color: var(--accent);
+    }
+
+    .dropdown-divider {
+      height: 1px;
+      background: var(--border);
+      margin: 8px 0;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .quick-actions {
+        grid-template-columns: 1fr;
+      }
+
+      .stats-row {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .stat-value {
+        font-size: 1.25rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/customer/" class="logo">HandsOn</a>
+      <div class="dropdown">
+        <button class="user-menu-btn" onclick="toggleMenu()">
+          <div class="user-menu-avatar" id="headerAvatar">?</div>
+          <span class="user-menu-name hide-mobile" id="headerName">Loading...</span>
+        </button>
+        <div class="dropdown-menu" id="userMenu">
+          <div class="dropdown-item" onclick="location.href='/customer/profile.html'">
+            <span>👤</span> Profile
+          </div>
+          <div class="dropdown-item" onclick="location.href='/customer/jobs.html'">
+            <span>📋</span> My Jobs
+          </div>
+          <div class="dropdown-divider"></div>
+          <div class="dropdown-item" onclick="logout()">
+            <span>🚪</span> Sign Out
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Welcome -->
+    <div class="welcome">
+      <h1 class="welcome-greeting">Welcome back, <span id="welcomeName">there</span>!</h1>
+      <p class="welcome-subtitle">What do you need help with today?</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+      <a href="/customer/request.html" class="action-card action-card-primary">
+        <div class="action-icon">➕</div>
+        <div class="action-title">Request a Service</div>
+      </a>
+      <a href="/customer/jobs.html" class="action-card">
+        <div class="action-icon">📋</div>
+        <div class="action-title">View My Jobs</div>
+      </a>
+    </div>
+
+    <!-- Stats -->
+    <div class="stats-row">
+      <div class="stat-card">
+        <div class="stat-value" id="statJobs">0</div>
+        <div class="stat-label">Total Jobs</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statSpent">$0</div>
+        <div class="stat-label">Total Spent</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" id="statRating">-</div>
+        <div class="stat-label">Your Rating</div>
+      </div>
+    </div>
+
+    <!-- Active Jobs -->
+    <div class="section-header">
+      <h2 class="section-title">Active Jobs</h2>
+      <a href="/customer/jobs.html" class="section-link">View All</a>
+    </div>
+    <div class="jobs-list" id="activeJobs">
+      <div class="empty-state">
+        <div class="empty-icon">📋</div>
+        <div class="empty-title">No active jobs</div>
+        <div class="empty-text">Request a service to get started</div>
+        <a href="/customer/request.html" class="btn btn-primary">Request a Service</a>
+      </div>
+    </div>
+
+    <!-- Recent Completed -->
+    <div class="section-header">
+      <h2 class="section-title">Recently Completed</h2>
+      <a href="/customer/jobs.html?status=paid" class="section-link">View All</a>
+    </div>
+    <div class="jobs-list" id="completedJobs">
+      <div class="empty-state">
+        <div class="empty-icon">✓</div>
+        <div class="empty-title">No completed jobs yet</div>
+        <div class="empty-text">Your completed jobs will appear here</div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const TRADES = {
+      assembly: '🔧', moving: '🚚', delivery: '📦', handyman: '🛠️', junk: '🗑️',
+      cleaning: '🧹', painting: '🎨', tvmount: '📺', garage: '🚗',
+      landscaping: '🌳', fencing: '🏗️', gutters: '🏠', powerwash: '💦',
+      electrical: '⚡', plumbing: '🚰', hvac: '❄️', roofing: '🔨', flooring: '🪵',
+      appliance: '🔌', solar: '☀️', dumpster: '🚛'
+    };
+
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+
+    let user = null;
+
+    async function init() {
+      // Check auth
+      const token = localStorage.getItem('handson_token');
+      if (!token) {
+        window.location.href = '/customer/';
+        return;
+      }
+
+      // Get current user
+      try {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) {
+          throw new Error('Session expired');
+        }
+
+        const data = await res.json();
+        user = data.user;
+
+        updateUI();
+        loadJobs();
+
+      } catch (error) {
+        console.error('Auth error:', error);
+        localStorage.removeItem('handson_token');
+        localStorage.removeItem('handson_user');
+        window.location.href = '/customer/';
+      }
+    }
+
+    function updateUI() {
+      if (!user) return;
+
+      const initial = user.name ? user.name[0].toUpperCase() : '?';
+      const firstName = user.name ? user.name.split(' ')[0] : 'there';
+
+      document.getElementById('headerAvatar').textContent = initial;
+      document.getElementById('headerName').textContent = firstName;
+      document.getElementById('welcomeName').textContent = firstName;
+
+      document.getElementById('statJobs').textContent = user.total_jobs || 0;
+      document.getElementById('statSpent').textContent = `$${(user.total_spend || 0).toLocaleString()}`;
+      document.getElementById('statRating').textContent = user.avg_rating ? user.avg_rating.toFixed(1) : '-';
+    }
+
+    async function loadJobs() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/jobs`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const { jobs } = await res.json();
+
+        if (!jobs || jobs.length === 0) return;
+
+        // Split into active and completed
+        const activeStatuses = ['pending', 'accepted', 'in_progress', 'completed'];
+        const activeJobs = jobs.filter(j => activeStatuses.includes(j.status)).slice(0, 3);
+        const completedJobs = jobs.filter(j => j.status === 'paid').slice(0, 3);
+
+        renderJobs('activeJobs', activeJobs, true);
+        renderJobs('completedJobs', completedJobs, false);
+
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+      }
+    }
+
+    function renderJobs(containerId, jobs, showEmpty = true) {
+      const container = document.getElementById(containerId);
+
+      if (jobs.length === 0) {
+        if (!showEmpty) {
+          container.innerHTML = `
+            <div class="empty-state">
+              <div class="empty-icon">✓</div>
+              <div class="empty-title">No completed jobs yet</div>
+              <div class="empty-text">Your completed jobs will appear here</div>
+            </div>
+          `;
+        }
+        return;
+      }
+
+      container.innerHTML = jobs.map(job => `
+        <a href="/customer/job.html?id=${job.id}" class="job-card">
+          <div class="job-icon">${TRADES[job.trade] || '📋'}</div>
+          <div class="job-content">
+            <div class="job-header">
+              <span class="job-title">${job.trade.charAt(0).toUpperCase() + job.trade.slice(1)} Job</span>
+              <span class="job-status status-${job.status}">${formatStatus(job.status)}</span>
+            </div>
+            <div class="job-meta">
+              ${job.city || 'Denver'} • ${formatDate(job.created_at)}
+            </div>
+            ${job.worker ? `
+              <div class="job-worker">
+                <div class="worker-avatar">${job.worker.name ? job.worker.name[0] : '?'}</div>
+                <div class="worker-info">
+                  <div class="worker-name">${job.worker.name || 'Worker'}</div>
+                  <div class="worker-rating">★ ${job.worker.rating || '5.0'}</div>
+                </div>
+              </div>
+            ` : ''}
+          </div>
+          <div class="job-price">
+            ${job.total_price ? `$${job.total_price.toLocaleString()}` : 'TBD'}
+          </div>
+        </a>
+      `).join('');
+    }
+
+    function formatStatus(status) {
+      const statusMap = {
+        pending: 'Pending',
+        accepted: 'Accepted',
+        in_progress: 'In Progress',
+        completed: 'Completed',
+        paid: 'Paid'
+      };
+      return statusMap[status] || status;
+    }
+
+    function formatDate(dateStr) {
+      const date = new Date(dateStr);
+      const now = new Date();
+      const diffDays = Math.floor((now - date) / (1000 * 60 * 60 * 24));
+
+      if (diffDays === 0) return 'Today';
+      if (diffDays === 1) return 'Yesterday';
+      if (diffDays < 7) return `${diffDays} days ago`;
+
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    }
+
+    function toggleMenu() {
+      document.getElementById('userMenu').classList.toggle('active');
+    }
+
+    // Close menu when clicking outside
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.dropdown')) {
+        document.getElementById('userMenu').classList.remove('active');
+      }
+    });
+
+    function logout() {
+      const token = localStorage.getItem('handson_token');
+
+      fetch(`${API_URL}/api/auth/logout`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` }
+      }).finally(() => {
+        localStorage.removeItem('handson_token');
+        localStorage.removeItem('handson_user');
+        window.location.href = '/customer/';
+      });
+    }
+
+    init();
+  </script>
+</body>
+</html>

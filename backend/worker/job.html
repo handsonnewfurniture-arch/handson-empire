@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Job Details - HandsOn Worker</title>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <style>
+    .main {
+      padding: 20px 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    /* Job Header */
+    .job-header-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .job-icon {
+      font-size: 56px;
+      margin-bottom: 12px;
+    }
+
+    .job-trade {
+      font-size: 1.25rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .job-status {
+      display: inline-block;
+      padding: 6px 14px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .status-pending { background: var(--warning-light); color: var(--warning); }
+    .status-accepted { background: rgba(59,130,246,0.15); color: #3b82f6; }
+    .status-in_progress { background: var(--accent-light); color: var(--accent); }
+    .status-completed { background: var(--success-light); color: var(--success); }
+    .status-paid { background: rgba(139,92,246,0.15); color: #8b5cf6; }
+
+    .job-price-large {
+      font-size: 2rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-top: 16px;
+    }
+
+    .job-price-label {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Info Cards */
+    .info-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .info-card-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .info-card-title span {
+      font-size: 16px;
+    }
+
+    /* Customer Info */
+    .customer-row {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .customer-avatar {
+      width: 48px;
+      height: 48px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: var(--text-secondary);
+    }
+
+    .customer-info {
+      flex: 1;
+    }
+
+    .customer-name {
+      font-size: 15px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .customer-location {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .customer-actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: var(--accent-light);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all var(--transition-fast);
+    }
+
+    .icon-btn:hover {
+      background: var(--accent);
+      color: white;
+    }
+
+    /* Scope of Work */
+    .scope-text {
+      font-size: 14px;
+      color: var(--text-secondary);
+      line-height: 1.6;
+      white-space: pre-wrap;
+    }
+
+    .scope-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .scope-image {
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      cursor: pointer;
+    }
+
+    .scope-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Timeline */
+    .timeline {
+      position: relative;
+      padding-left: 24px;
+    }
+
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 0;
+      bottom: 0;
+      width: 2px;
+      background: var(--border);
+    }
+
+    .timeline-item {
+      position: relative;
+      padding-bottom: 20px;
+    }
+
+    .timeline-item:last-child {
+      padding-bottom: 0;
+    }
+
+    .timeline-dot {
+      position: absolute;
+      left: -24px;
+      top: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: var(--border);
+      border: 3px solid var(--bg-card);
+    }
+
+    .timeline-dot.active {
+      background: var(--accent);
+    }
+
+    .timeline-dot.completed {
+      background: var(--success);
+    }
+
+    .timeline-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .timeline-date {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+
+    /* Proof of Work Upload */
+    .upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+    }
+
+    .upload-area:hover,
+    .upload-area.dragover {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .upload-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.7;
+    }
+
+    .upload-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .proof-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 10px;
+      margin-top: 16px;
+    }
+
+    .proof-image {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .proof-image img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .proof-image-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .proof-image-remove:hover {
+      background: var(--error);
+    }
+
+    /* Final Price Input */
+    .price-input-wrapper {
+      position: relative;
+    }
+
+    .price-prefix {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 18px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .price-input {
+      width: 100%;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 16px 16px 16px 36px;
+      color: var(--text-primary);
+      font-size: 24px;
+      font-weight: 700;
+    }
+
+    .price-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Action Buttons */
+    .action-bar {
+      position: sticky;
+      bottom: 16px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 16px;
+      display: flex;
+      gap: 12px;
+    }
+
+    .action-bar .btn {
+      flex: 1;
+    }
+
+    /* Notes Input */
+    .notes-input {
+      width: 100%;
+      min-height: 80px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+    }
+
+    .notes-input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    /* Image Modal */
+    .image-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.95);
+      z-index: 1000;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .image-modal.active {
+      display: flex;
+    }
+
+    .image-modal img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: var(--radius-lg);
+    }
+
+    .image-modal-close {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      width: 40px;
+      height: 40px;
+      background: var(--border);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 20px;
+      cursor: pointer;
+    }
+
+    /* Review Section */
+    .review-section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+
+    .star-rating {
+      display: flex;
+      gap: 8px;
+      justify-content: center;
+      margin: 20px 0;
+    }
+
+    .star-btn {
+      background: none;
+      border: none;
+      font-size: 36px;
+      cursor: pointer;
+      opacity: 0.3;
+      transition: all var(--transition-fast);
+    }
+
+    .star-btn:hover,
+    .star-btn.active {
+      opacity: 1;
+      transform: scale(1.1);
+    }
+
+    .review-textarea {
+      width: 100%;
+      min-height: 100px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      margin-bottom: 16px;
+    }
+
+    .review-textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .existing-review {
+      background: var(--success-light);
+      border: 1px solid rgba(34, 197, 94, 0.3);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      text-align: center;
+    }
+
+    .existing-review-stars {
+      font-size: 24px;
+      margin-bottom: 8px;
+    }
+
+    .existing-review-text {
+      font-size: 13px;
+      color: var(--text-secondary);
+      font-style: italic;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .job-price-large {
+        font-size: 1.5rem;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/worker/" class="logo">HandsOn Worker</a>
+      <a href="/worker/dashboard.html" class="nav-link">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="main" id="mainContent">
+    <a href="/worker/dashboard.html" class="back-link">
+      <span>←</span> Back to Dashboard
+    </a>
+
+    <div id="loading" style="text-align: center; padding: 60px;">
+      <div class="loader loader-lg" style="margin: 0 auto 16px;"></div>
+      <p class="text-muted">Loading job details...</p>
+    </div>
+
+    <div id="jobContent" class="hidden"></div>
+  </main>
+
+  <!-- Image Modal -->
+  <div class="image-modal" id="imageModal" onclick="closeImageModal()">
+    <button class="image-modal-close">✕</button>
+    <img id="modalImage" src="" alt="Full size">
+  </div>
+
+  <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+
+  <script>
+    const TRADES = {
+      assembly: '🔧', moving: '🚚', delivery: '📦', handyman: '🛠️', junk: '🗑️',
+      cleaning: '🧹', painting: '🎨', tvmount: '📺', garage: '🚗',
+      landscaping: '🌳', fencing: '🏗️', gutters: '🏠', powerwash: '💦',
+      electrical: '⚡', plumbing: '🚰', hvac: '❄️', roofing: '🔨', flooring: '🪵',
+      appliance: '🔌', solar: '☀️', dumpster: '🚛'
+    };
+
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+
+    let job = null;
+    let proofImages = [];
+
+    async function init() {
+      const token = localStorage.getItem('handson_token');
+      if (!token) {
+        window.location.href = '/worker/signup.html';
+        return;
+      }
+
+      const params = new URLSearchParams(window.location.search);
+      const jobId = params.get('id');
+
+      if (!jobId) {
+        window.location.href = '/worker/dashboard.html';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/api/jobs/${jobId}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('Job not found');
+
+        const data = await res.json();
+        job = data.job;
+
+        renderJob();
+        setupFileUpload();
+
+      } catch (error) {
+        console.error('Error loading job:', error);
+        document.getElementById('loading').innerHTML = `
+          <div style="font-size: 48px; margin-bottom: 16px;">😕</div>
+          <p>Job not found</p>
+          <a href="/worker/dashboard.html" class="btn btn-primary mt-md">Back to Dashboard</a>
+        `;
+      }
+    }
+
+    function renderJob() {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('jobContent').classList.remove('hidden');
+
+      const statusLabels = {
+        pending: 'New Request',
+        accepted: 'Accepted',
+        in_progress: 'In Progress',
+        completed: 'Awaiting Payment',
+        paid: 'Paid'
+      };
+
+      document.getElementById('jobContent').innerHTML = `
+        <!-- Job Header -->
+        <div class="job-header-card">
+          <div class="job-icon">${TRADES[job.trade] || '📋'}</div>
+          <h1 class="job-trade">${capitalize(job.trade)} Job</h1>
+          <span class="job-status status-${job.status}">${statusLabels[job.status]}</span>
+          ${job.total_price ? `
+            <div class="job-price-large">$${job.total_price.toLocaleString()}</div>
+            <div class="job-price-label">Job Total</div>
+          ` : ''}
+        </div>
+
+        <!-- Customer Info -->
+        <div class="info-card">
+          <div class="info-card-title"><span>👤</span> Customer</div>
+          <div class="customer-row">
+            <div class="customer-avatar">${job.customer?.name?.[0] || '?'}</div>
+            <div class="customer-info">
+              <div class="customer-name">${job.customer?.name || 'Customer'}</div>
+              <div class="customer-location">${job.address || job.city || 'Denver, CO'}</div>
+            </div>
+            <div class="customer-actions">
+              ${job.customer?.phone ? `
+                <a href="tel:${job.customer.phone}" class="icon-btn">📞</a>
+                <a href="sms:${job.customer.phone}" class="icon-btn">💬</a>
+              ` : ''}
+            </div>
+          </div>
+        </div>
+
+        <!-- Scope of Work -->
+        <div class="info-card">
+          <div class="info-card-title"><span>📝</span> Scope of Work</div>
+          <div class="scope-text">${job.scope_of_work || 'No description provided'}</div>
+          ${job.scope_images?.length ? `
+            <div class="scope-images">
+              ${job.scope_images.map(img => `
+                <div class="scope-image" onclick="openImage('${img}')">
+                  <img src="${img}" alt="Scope image" loading="lazy">
+                </div>
+              `).join('')}
+            </div>
+          ` : ''}
+        </div>
+
+        <!-- Job Timeline -->
+        <div class="info-card">
+          <div class="info-card-title"><span>📅</span> Timeline</div>
+          <div class="timeline">
+            <div class="timeline-item">
+              <div class="timeline-dot completed"></div>
+              <div class="timeline-title">Job Requested</div>
+              <div class="timeline-date">${formatDateTime(job.created_at)}</div>
+            </div>
+            ${job.accepted_at ? `
+              <div class="timeline-item">
+                <div class="timeline-dot completed"></div>
+                <div class="timeline-title">Accepted</div>
+                <div class="timeline-date">${formatDateTime(job.accepted_at)}</div>
+              </div>
+            ` : ''}
+            ${job.started_at ? `
+              <div class="timeline-item">
+                <div class="timeline-dot completed"></div>
+                <div class="timeline-title">Work Started</div>
+                <div class="timeline-date">${formatDateTime(job.started_at)}</div>
+              </div>
+            ` : ''}
+            ${job.completed_date ? `
+              <div class="timeline-item">
+                <div class="timeline-dot completed"></div>
+                <div class="timeline-title">Completed</div>
+                <div class="timeline-date">${formatDateTime(job.completed_date)}</div>
+              </div>
+            ` : ''}
+            ${['pending', 'accepted'].includes(job.status) ? `
+              <div class="timeline-item">
+                <div class="timeline-dot ${job.status === 'accepted' ? 'active' : ''}"></div>
+                <div class="timeline-title">${job.status === 'pending' ? 'Awaiting acceptance' : 'Ready to start'}</div>
+                <div class="timeline-date">-</div>
+              </div>
+            ` : ''}
+          </div>
+        </div>
+
+        ${job.status === 'in_progress' ? renderProofOfWorkSection() : ''}
+
+        ${job.status === 'completed' && job.proof_of_work_images?.length ? `
+          <div class="info-card">
+            <div class="info-card-title"><span>📷</span> Proof of Work</div>
+            <div class="scope-images">
+              ${job.proof_of_work_images.map(img => `
+                <div class="scope-image" onclick="openImage('${img}')">
+                  <img src="${img}" alt="Proof of work" loading="lazy">
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        ${job.notes ? `
+          <div class="info-card">
+            <div class="info-card-title"><span>💬</span> Notes</div>
+            <div class="scope-text">${job.notes}</div>
+          </div>
+        ` : ''}
+
+        ${job.status === 'paid' ? renderReviewSection() : ''}
+
+        ${job.status === 'paid' && job.proof_of_work_images?.length ? `
+          <div class="info-card">
+            <div class="info-card-title"><span>📷</span> Proof of Work</div>
+            <div class="scope-images">
+              ${job.proof_of_work_images.map(img => `
+                <div class="scope-image" onclick="openImage('${img}')">
+                  <img src="${img}" alt="Proof of work" loading="lazy">
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        ` : ''}
+
+        <!-- Action Bar -->
+        ${renderActionBar()}
+      `;
+    }
+
+    function renderProofOfWorkSection() {
+      return `
+        <div class="info-card" id="proofSection">
+          <div class="info-card-title"><span>📷</span> Proof of Work</div>
+          <p class="text-muted mb-md" style="font-size: 13px;">Upload photos of the completed work before marking as done</p>
+
+          <div class="upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📤</div>
+            <div class="upload-title">Tap to add photos</div>
+            <div class="upload-hint">Up to 10 images</div>
+          </div>
+
+          <div class="proof-images" id="proofPreviews"></div>
+
+          <div class="input-group mt-lg">
+            <label class="input-label">Final Price</label>
+            <div class="price-input-wrapper">
+              <span class="price-prefix">$</span>
+              <input type="number" class="price-input" id="finalPrice" value="${job.total_price || ''}" placeholder="0">
+            </div>
+          </div>
+
+          <div class="input-group mt-md">
+            <label class="input-label">Completion Notes (optional)</label>
+            <textarea class="notes-input" id="completionNotes" placeholder="Any notes about the completed work..."></textarea>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderActionBar() {
+      if (job.status === 'pending') {
+        return `
+          <div class="action-bar">
+            <button class="btn btn-secondary" onclick="declineJob()">Decline</button>
+            <button class="btn btn-primary" onclick="acceptJob()">Accept Job</button>
+          </div>
+        `;
+      }
+
+      if (job.status === 'accepted') {
+        return `
+          <div class="action-bar">
+            <button class="btn btn-primary btn-full" onclick="startJob()">Start Job</button>
+          </div>
+        `;
+      }
+
+      if (job.status === 'in_progress') {
+        return `
+          <div class="action-bar">
+            <button class="btn btn-primary btn-full" id="completeBtn" onclick="completeJob()">Complete Job</button>
+          </div>
+        `;
+      }
+
+      if (job.status === 'completed') {
+        return `
+          <div class="action-bar">
+            <button class="btn btn-secondary btn-full" onclick="addToPortfolio()">Add to Portfolio</button>
+          </div>
+        `;
+      }
+
+      if (job.status === 'paid') {
+        return `
+          <div class="action-bar">
+            <button class="btn btn-secondary" onclick="addToPortfolio()">Add to Portfolio</button>
+            <a href="/worker/portfolio.html" class="btn btn-primary">View Portfolio</a>
+          </div>
+        `;
+      }
+
+      return '';
+    }
+
+    function renderReviewSection() {
+      // Check if already reviewed
+      if (job.customer_rating) {
+        return `
+          <div class="review-section">
+            <div class="info-card-title"><span>⭐</span> Your Review of Customer</div>
+            <div class="existing-review">
+              <div class="existing-review-stars">${'★'.repeat(job.customer_rating)}${'☆'.repeat(5 - job.customer_rating)}</div>
+              <div class="existing-review-text">You rated this customer ${job.customer_rating} star${job.customer_rating !== 1 ? 's' : ''}</div>
+            </div>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="review-section" id="reviewSection">
+          <div class="info-card-title"><span>⭐</span> Review Customer</div>
+          <p class="text-muted text-center" style="font-size: 13px; margin-bottom: 12px;">
+            How was your experience with ${job.customer?.name || 'this customer'}?
+          </p>
+          <div class="star-rating" id="starRating">
+            <button class="star-btn" data-rating="1" onclick="setRating(1)">★</button>
+            <button class="star-btn" data-rating="2" onclick="setRating(2)">★</button>
+            <button class="star-btn" data-rating="3" onclick="setRating(3)">★</button>
+            <button class="star-btn" data-rating="4" onclick="setRating(4)">★</button>
+            <button class="star-btn" data-rating="5" onclick="setRating(5)">★</button>
+          </div>
+          <textarea class="review-textarea" id="reviewComment" placeholder="Optional: Leave a comment about your experience..."></textarea>
+          <button class="btn btn-primary btn-full" id="submitReviewBtn" onclick="submitReview()" disabled>
+            Submit Review
+          </button>
+        </div>
+      `;
+    }
+
+    let selectedRating = 0;
+
+    function setRating(rating) {
+      selectedRating = rating;
+      document.querySelectorAll('.star-btn').forEach((btn, index) => {
+        btn.classList.toggle('active', index < rating);
+      });
+      document.getElementById('submitReviewBtn').disabled = false;
+    }
+
+    async function submitReview() {
+      if (selectedRating === 0) {
+        alert('Please select a rating');
+        return;
+      }
+
+      const token = localStorage.getItem('handson_token');
+      const btn = document.getElementById('submitReviewBtn');
+      const comment = document.getElementById('reviewComment').value;
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loader loader-sm"></div> Submitting...';
+
+      try {
+        const res = await fetch(`${API_URL}/api/jobs/${job.id}/review`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            rating: selectedRating,
+            comment: comment || null
+          })
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to submit review');
+        }
+
+        // Refresh to show submitted review
+        location.reload();
+
+      } catch (error) {
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = 'Submit Review';
+      }
+    }
+
+    function setupFileUpload() {
+      const fileInput = document.getElementById('fileInput');
+
+      fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+      });
+
+      // Setup drag and drop after render
+      setTimeout(() => {
+        const uploadArea = document.getElementById('uploadArea');
+        if (uploadArea) {
+          uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.classList.add('dragover');
+          });
+
+          uploadArea.addEventListener('dragleave', () => {
+            uploadArea.classList.remove('dragover');
+          });
+
+          uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+          });
+        }
+      }, 100);
+    }
+
+    function handleFiles(files) {
+      const maxFiles = 10;
+
+      for (const file of files) {
+        if (proofImages.length >= maxFiles) {
+          alert('Maximum 10 images allowed');
+          break;
+        }
+
+        if (!file.type.startsWith('image/')) {
+          continue;
+        }
+
+        proofImages.push(file);
+      }
+
+      renderProofPreviews();
+    }
+
+    function renderProofPreviews() {
+      const container = document.getElementById('proofPreviews');
+      if (!container) return;
+
+      container.innerHTML = proofImages.map((file, index) => `
+        <div class="proof-image">
+          <img src="${URL.createObjectURL(file)}" alt="Proof">
+          <button class="proof-image-remove" onclick="removeProofImage(${index})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removeProofImage(index) {
+      proofImages.splice(index, 1);
+      renderProofPreviews();
+    }
+
+    async function acceptJob() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        await fetch(`${API_URL}/api/jobs/${job.id}/accept`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        location.reload();
+
+      } catch (error) {
+        alert('Error accepting job');
+      }
+    }
+
+    async function declineJob() {
+      if (!confirm('Are you sure you want to decline this job?')) return;
+
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        await fetch(`${API_URL}/api/jobs/${job.id}/decline`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        window.location.href = '/worker/dashboard.html';
+
+      } catch (error) {
+        alert('Error declining job');
+      }
+    }
+
+    async function startJob() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        await fetch(`${API_URL}/api/jobs/${job.id}/start`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        location.reload();
+
+      } catch (error) {
+        alert('Error starting job');
+      }
+    }
+
+    async function completeJob() {
+      const token = localStorage.getItem('handson_token');
+      const btn = document.getElementById('completeBtn');
+
+      const finalPrice = document.getElementById('finalPrice')?.value;
+      const notes = document.getElementById('completionNotes')?.value;
+
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loader loader-sm"></div> Completing...';
+
+      try {
+        // Upload proof images first
+        let proofUrls = [];
+
+        if (proofImages.length > 0) {
+          const formData = new FormData();
+          formData.append('job_id', job.id);
+          proofImages.forEach(file => {
+            formData.append('images', file);
+          });
+
+          const uploadRes = await fetch(`${API_URL}/api/upload/proof-of-work`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` },
+            body: formData
+          });
+
+          const uploadData = await uploadRes.json();
+          proofUrls = uploadData.urls || [];
+        }
+
+        // Complete the job
+        await fetch(`${API_URL}/api/jobs/${job.id}/complete`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            proof_of_work_images: proofUrls,
+            final_price: finalPrice ? parseFloat(finalPrice) : null,
+            notes: notes || null
+          })
+        });
+
+        location.reload();
+
+      } catch (error) {
+        console.error('Complete error:', error);
+        alert('Error completing job');
+        btn.disabled = false;
+        btn.textContent = 'Complete Job';
+      }
+    }
+
+    async function addToPortfolio() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/portfolio/from-job/${job.id}`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            caption: `${capitalize(job.trade)} job completed`
+          })
+        });
+
+        if (res.ok) {
+          alert('Added to portfolio!');
+        } else {
+          throw new Error('Failed to add');
+        }
+
+      } catch (error) {
+        alert('Error adding to portfolio');
+      }
+    }
+
+    function openImage(url) {
+      document.getElementById('modalImage').src = url;
+      document.getElementById('imageModal').classList.add('active');
+    }
+
+    function closeImageModal() {
+      document.getElementById('imageModal').classList.remove('active');
+    }
+
+    function capitalize(str) {
+      return str.charAt(0).toUpperCase() + str.slice(1);
+    }
+
+    function formatDateTime(dateStr) {
+      if (!dateStr) return '-';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit'
+      });
+    }
+
+    // Close modal on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeImageModal();
+      }
+    });
+
+    init();
+  </script>
+  <script src="/shared/components.js"></script>
+</body>
+</html>

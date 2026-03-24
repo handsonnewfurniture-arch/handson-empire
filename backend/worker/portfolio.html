@@ -1,0 +1,2207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Hub - HandsOn Empire</title>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <style>
+    * {
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    body {
+      padding-bottom: 80px;
+      overflow-x: hidden;
+    }
+
+    .main {
+      padding: 16px;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ═══ GLASSMORPHISM ═══ */
+    .glass-card {
+      background: rgba(15, 22, 35, 0.85);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: var(--radius-xl);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    }
+
+    /* ═══ BOTTOM NAV ═══ */
+    .bottom-nav {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 70px;
+      background: rgba(10, 15, 26, 0.95);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border-top: 1px solid var(--border);
+      display: flex;
+      justify-content: space-around;
+      align-items: center;
+      z-index: 100;
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+
+    .nav-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      padding: 8px 12px;
+      background: none;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      border-radius: var(--radius-lg);
+    }
+
+    .nav-item:active {
+      transform: scale(0.95);
+    }
+
+    .nav-item.active {
+      color: var(--accent);
+    }
+
+    .nav-item.active::before {
+      content: '';
+      position: absolute;
+      top: -1px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 24px;
+      height: 3px;
+      background: var(--accent);
+      border-radius: 0 0 4px 4px;
+    }
+
+    .nav-icon {
+      font-size: 22px;
+      line-height: 1;
+    }
+
+    .nav-label {
+      font-size: 10px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .nav-badge {
+      position: absolute;
+      top: 0;
+      right: 4px;
+      background: var(--error);
+      color: white;
+      font-size: 10px;
+      font-weight: 700;
+      min-width: 18px;
+      height: 18px;
+      border-radius: 9px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px solid #0a0f1a;
+    }
+
+    /* ═══ TAB CONTENT ═══ */
+    .tab-content {
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+      display: block;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ═══ PROFILE HEADER ═══ */
+    .profile-header {
+      text-align: center;
+      padding: 24px 20px;
+      margin-bottom: 20px;
+    }
+
+    .profile-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: 800;
+      color: white;
+      margin: 0 auto 16px;
+      box-shadow: 0 0 30px rgba(249, 115, 22, 0.3);
+    }
+
+    .profile-name {
+      font-size: 1.5rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+
+    .profile-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 16px;
+    }
+
+    .badge {
+      background: rgba(249, 115, 22, 0.15);
+      border: 1px solid rgba(249, 115, 22, 0.3);
+      color: var(--accent);
+      padding: 4px 10px;
+      border-radius: var(--radius-full);
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .profile-stats {
+      display: flex;
+      justify-content: center;
+      gap: 32px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+
+    .profile-stat {
+      text-align: center;
+    }
+
+    .stat-value {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--accent);
+    }
+
+    .stat-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+
+    /* ═══ PORTFOLIO GRID ═══ */
+    .portfolio-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 4px;
+    }
+
+    .portfolio-item {
+      aspect-ratio: 1;
+      background: var(--bg-card);
+      border-radius: 4px;
+      overflow: hidden;
+      position: relative;
+      cursor: pointer;
+    }
+
+    .portfolio-item:active {
+      transform: scale(0.98);
+    }
+
+    .portfolio-item img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .portfolio-item-overlay {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(transparent 50%, rgba(0,0,0,0.8));
+      display: flex;
+      align-items: flex-end;
+      padding: 8px;
+      opacity: 0;
+      transition: opacity 0.2s;
+    }
+
+    .portfolio-item:hover .portfolio-item-overlay {
+      opacity: 1;
+    }
+
+    .add-photo {
+      aspect-ratio: 1;
+      background: var(--bg-card);
+      border: 2px dashed var(--border);
+      border-radius: 4px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .add-photo:hover {
+      border-color: var(--accent);
+      background: rgba(249, 115, 22, 0.05);
+    }
+
+    .add-photo-icon {
+      font-size: 28px;
+      opacity: 0.5;
+    }
+
+    /* ═══ SWIPE CONTAINER (JOBS TAB) ═══ */
+    .swipe-container {
+      position: relative;
+      height: calc(100vh - 180px);
+      overflow: hidden;
+      border-radius: var(--radius-xl);
+    }
+
+    .swipe-card {
+      position: absolute;
+      inset: 0;
+      border-radius: var(--radius-xl);
+      overflow: hidden;
+      transition: transform 0.4s cubic-bezier(0.25, 0.8, 0.25, 1), opacity 0.4s;
+      touch-action: none;
+      cursor: grab;
+    }
+
+    .swipe-card:active {
+      cursor: grabbing;
+    }
+
+    .swipe-card.swiping-left {
+      transform: translateX(-120%) rotate(-15deg);
+      opacity: 0;
+    }
+
+    .swipe-card.swiping-right {
+      transform: translateX(120%) rotate(15deg);
+      opacity: 0;
+    }
+
+    .swipe-card.swiping-up {
+      transform: translateY(-120%);
+      opacity: 0;
+    }
+
+    .swipe-card-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg,
+        rgba(249, 115, 22, 0.2) 0%,
+        rgba(15, 22, 35, 0.95) 50%,
+        rgba(15, 22, 35, 1) 100%
+      );
+    }
+
+    .swipe-card-content {
+      position: absolute;
+      inset: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      padding: 24px;
+    }
+
+    .job-trade-icon {
+      font-size: 80px;
+      position: absolute;
+      top: 20%;
+      left: 50%;
+      transform: translateX(-50%);
+      opacity: 0.3;
+    }
+
+    .job-urgency {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--error);
+      color: white;
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      width: fit-content;
+    }
+
+    .job-urgency.moderate {
+      background: var(--warning);
+      color: #0a0f1a;
+    }
+
+    .job-urgency.flexible {
+      background: var(--text-muted);
+    }
+
+    .job-title {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+      line-height: 1.2;
+    }
+
+    .job-location {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-secondary);
+      font-size: 14px;
+      margin-bottom: 8px;
+    }
+
+    .job-price {
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--success);
+      margin-bottom: 16px;
+    }
+
+    .job-description {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.5;
+      margin-bottom: 20px;
+      display: -webkit-box;
+      -webkit-line-clamp: 3;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .customer-preview {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      background: rgba(255, 255, 255, 0.05);
+      padding: 12px;
+      border-radius: var(--radius-lg);
+      margin-bottom: 20px;
+    }
+
+    .customer-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--accent);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+      color: white;
+    }
+
+    .customer-info {
+      flex: 1;
+    }
+
+    .customer-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .customer-rating {
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .swipe-actions {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+    }
+
+    .action-btn {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .action-btn:active {
+      transform: scale(0.9);
+    }
+
+    .action-pass {
+      background: rgba(239, 68, 68, 0.2);
+      color: var(--error);
+      border: 2px solid var(--error);
+    }
+
+    .action-save {
+      background: rgba(234, 179, 8, 0.2);
+      color: var(--warning);
+      border: 2px solid var(--warning);
+    }
+
+    .action-claim {
+      background: var(--success);
+      color: white;
+      width: 80px;
+      border-radius: 40px;
+      font-size: 16px;
+      font-weight: 700;
+      gap: 6px;
+    }
+
+    .swipe-hint {
+      position: absolute;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.6);
+      padding: 8px 16px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      color: var(--text-secondary);
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+
+    .swipe-container:hover .swipe-hint {
+      opacity: 1;
+    }
+
+    .no-jobs {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .no-jobs-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    /* ═══ AFFILIATE TAB ═══ */
+    .earn-header {
+      text-align: center;
+      padding: 24px 20px;
+      margin-bottom: 20px;
+    }
+
+    .earn-balance {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--success);
+      margin-bottom: 4px;
+    }
+
+    .earn-label {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .referral-tabs {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .referral-tab {
+      flex: 1;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .referral-tab:active {
+      transform: scale(0.98);
+    }
+
+    .referral-tab.active {
+      background: rgba(249, 115, 22, 0.1);
+      border-color: var(--accent);
+    }
+
+    .referral-tab-icon {
+      font-size: 28px;
+      margin-bottom: 8px;
+    }
+
+    .referral-tab-title {
+      font-weight: 700;
+      font-size: 14px;
+      margin-bottom: 4px;
+    }
+
+    .referral-tab-reward {
+      color: var(--success);
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .referral-form {
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+
+    .input-group {
+      margin-bottom: 16px;
+    }
+
+    .input-label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-secondary);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+    }
+
+    .input {
+      width: 100%;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      color: var(--text-primary);
+      font-size: 15px;
+      transition: border-color 0.2s;
+    }
+
+    .input:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .share-section {
+      padding: 20px;
+      text-align: center;
+    }
+
+    .share-title {
+      font-size: 14px;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+    }
+
+    .share-link-box {
+      display: flex;
+      gap: 8px;
+      background: var(--bg-primary);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 4px;
+    }
+
+    .share-link {
+      flex: 1;
+      padding: 12px;
+      font-family: monospace;
+      font-size: 13px;
+      color: var(--accent);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .share-copy-btn {
+      background: var(--accent);
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 12px 16px;
+      color: white;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
+    .share-copy-btn:active {
+      transform: scale(0.95);
+    }
+
+    .referral-list {
+      margin-top: 20px;
+    }
+
+    .referral-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .referral-status {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .referral-status.pending { background: var(--warning); }
+    .referral-status.job_linked { background: #f59e0b; }
+    .referral-status.work_verified { background: #3b82f6; }
+    .referral-status.payment_confirmed { background: var(--success); }
+    .referral-status.paid { background: var(--accent); }
+    .referral-status.cancelled { background: #6b7280; }
+
+    .verification-pipeline {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      margin-top: 8px;
+      font-size: 11px;
+    }
+
+    .pipeline-step {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      color: var(--text-muted);
+      opacity: 0.4;
+    }
+
+    .pipeline-step.complete {
+      color: var(--success);
+      opacity: 1;
+    }
+
+    .pipeline-step.current {
+      color: var(--accent);
+      opacity: 1;
+      font-weight: 600;
+    }
+
+    .pipeline-connector {
+      width: 12px;
+      height: 2px;
+      background: var(--border);
+    }
+
+    .pipeline-connector.complete {
+      background: var(--success);
+    }
+
+    .referral-info {
+      flex: 1;
+    }
+
+    .referral-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .referral-meta {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .referral-payout {
+      text-align: right;
+    }
+
+    .payout-amount {
+      font-weight: 700;
+      color: var(--success);
+    }
+
+    .payout-status {
+      font-size: 11px;
+      color: var(--text-muted);
+      display: block;
+    }
+
+    /* ═══ REVIEWS TAB ═══ */
+    .reviews-toggle {
+      display: flex;
+      gap: 4px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 4px;
+      margin-bottom: 20px;
+    }
+
+    .toggle-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-radius: var(--radius-md);
+      padding: 12px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .toggle-btn.active {
+      background: var(--accent);
+      color: white;
+    }
+
+    .rating-summary {
+      text-align: center;
+      padding: 24px;
+      margin-bottom: 20px;
+    }
+
+    .rating-big {
+      font-size: 4rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+
+    .rating-stars {
+      font-size: 24px;
+      color: var(--warning);
+      margin: 8px 0;
+    }
+
+    .rating-count {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    .rating-breakdown {
+      max-width: 280px;
+      margin: 0 auto;
+    }
+
+    .rating-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 13px;
+    }
+
+    .bar-label {
+      width: 30px;
+      color: var(--text-secondary);
+    }
+
+    .bar {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 4px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: var(--warning);
+      border-radius: 4px;
+      transition: width 0.5s ease;
+    }
+
+    .bar-count {
+      width: 24px;
+      text-align: right;
+      color: var(--text-muted);
+    }
+
+    .review-card {
+      padding: 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .review-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+
+    .reviewer-avatar {
+      width: 44px;
+      height: 44px;
+      border-radius: 50%;
+      background: var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      font-weight: 700;
+    }
+
+    .reviewer-info {
+      flex: 1;
+    }
+
+    .reviewer-name {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .review-date {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .review-rating {
+      color: var(--warning);
+      font-size: 14px;
+    }
+
+    .review-job-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: var(--bg-primary);
+      padding: 6px 12px;
+      border-radius: var(--radius-full);
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+
+    .review-comment {
+      color: var(--text-secondary);
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ═══ STATS TAB ═══ */
+    .stats-header {
+      text-align: center;
+      padding: 24px 20px;
+      margin-bottom: 20px;
+    }
+
+    .stats-total {
+      font-size: 3rem;
+      font-weight: 800;
+      color: var(--accent);
+      margin-bottom: 4px;
+    }
+
+    .stats-period {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .stats-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      text-align: center;
+    }
+
+    .stats-card-value {
+      font-size: 1.75rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .stats-card-value.green { color: var(--success); }
+    .stats-card-value.orange { color: var(--accent); }
+    .stats-card-value.yellow { color: var(--warning); }
+
+    .stats-card-label {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .stats-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--text-secondary);
+      margin-bottom: 12px;
+      padding: 0 4px;
+    }
+
+    .transaction-list {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      overflow: hidden;
+    }
+
+    .transaction-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 16px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .transaction-item:last-child {
+      border-bottom: none;
+    }
+
+    .transaction-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+    }
+
+    .transaction-icon.job { background: rgba(34, 197, 94, 0.2); }
+    .transaction-icon.referral { background: rgba(249, 115, 22, 0.2); }
+    .transaction-icon.payout { background: rgba(234, 179, 8, 0.2); }
+
+    .transaction-info {
+      flex: 1;
+    }
+
+    .transaction-title {
+      font-weight: 600;
+      font-size: 14px;
+    }
+
+    .transaction-date {
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .transaction-amount {
+      font-weight: 700;
+      font-size: 15px;
+    }
+
+    .transaction-amount.positive { color: var(--success); }
+    .transaction-amount.negative { color: var(--error); }
+
+    /* ═══ BUTTON STYLES ═══ */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 14px 24px;
+      border-radius: var(--radius-lg);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.2s;
+      border: none;
+    }
+
+    .btn:active {
+      transform: scale(0.98);
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-full {
+      width: 100%;
+    }
+
+    /* ═══ EMPTY STATE ═══ */
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+    }
+
+    .empty-icon {
+      font-size: 64px;
+      margin-bottom: 16px;
+      opacity: 0.5;
+    }
+
+    .empty-title {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 8px;
+    }
+
+    .empty-text {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* ═══ MODALS ═══ */
+    .modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 200;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .modal.active {
+      display: flex;
+    }
+
+    .modal-content {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      width: 100%;
+      max-width: 400px;
+      max-height: 90vh;
+      overflow-y: auto;
+    }
+
+    .modal-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .modal-title {
+      font-weight: 700;
+      font-size: 16px;
+    }
+
+    .modal-close {
+      width: 32px;
+      height: 32px;
+      background: var(--border);
+      border: none;
+      border-radius: 50%;
+      color: var(--text-secondary);
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    /* ═══ LOADER ═══ */
+    .skeleton {
+      background: linear-gradient(90deg,
+        var(--bg-card) 25%,
+        var(--border) 50%,
+        var(--bg-card) 75%
+      );
+      background-size: 200% 100%;
+      animation: shimmer 1.5s infinite;
+      border-radius: var(--radius-md);
+    }
+
+    @keyframes shimmer {
+      0% { background-position: 200% 0; }
+      100% { background-position: -200% 0; }
+    }
+
+    /* ═══ TOAST ═══ */
+    .toast {
+      position: fixed;
+      bottom: 90px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 12px 24px;
+      border-radius: var(--radius-full);
+      font-size: 14px;
+      font-weight: 600;
+      z-index: 300;
+      opacity: 0;
+      transition: all 0.3s ease;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-color: var(--success);
+      color: var(--success);
+    }
+
+    .toast.error {
+      border-color: var(--error);
+      color: var(--error);
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/worker/" class="logo">HandsOn</a>
+      <a href="/worker/dashboard.html" class="nav-link">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- ═══ PORTFOLIO TAB ═══ -->
+    <div class="tab-content active" id="portfolioTab">
+      <div class="profile-header glass-card">
+        <div class="profile-avatar" id="profileAvatar">?</div>
+        <h1 class="profile-name" id="profileName">Loading...</h1>
+        <div class="profile-badges" id="profileBadges"></div>
+        <div class="profile-stats">
+          <div class="profile-stat">
+            <div class="stat-value" id="statPosts">0</div>
+            <div class="stat-label">Posts</div>
+          </div>
+          <div class="profile-stat">
+            <div class="stat-value" id="statJobs">0</div>
+            <div class="stat-label">Jobs</div>
+          </div>
+          <div class="profile-stat">
+            <div class="stat-value" id="statRating">5.0</div>
+            <div class="stat-label">Rating</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="portfolio-grid" id="portfolioGrid">
+        <div class="add-photo" onclick="openUploadModal()">
+          <div class="add-photo-icon">+</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ JOBS TAB ═══ -->
+    <div class="tab-content" id="jobsTab">
+      <div class="swipe-container" id="swipeContainer">
+        <div class="swipe-hint">Swipe up for next, left to pass, right to save</div>
+        <div id="jobCards"></div>
+      </div>
+    </div>
+
+    <!-- ═══ EARN TAB ═══ -->
+    <div class="tab-content" id="earnTab">
+      <div class="earn-header glass-card">
+        <div class="earn-balance" id="earnBalance">$0</div>
+        <div class="earn-label">Total Earned from Referrals</div>
+      </div>
+
+      <div class="referral-tabs">
+        <div class="referral-tab active" onclick="switchReferralTab('customer')">
+          <div class="referral-tab-icon">👤</div>
+          <div class="referral-tab-title">Refer Customer</div>
+          <div class="referral-tab-reward">Earn $25-50</div>
+        </div>
+        <div class="referral-tab" onclick="switchReferralTab('worker')">
+          <div class="referral-tab-icon">👷</div>
+          <div class="referral-tab-title">Refer Worker</div>
+          <div class="referral-tab-reward">Earn 5% ongoing</div>
+        </div>
+      </div>
+
+      <div class="glass-card" id="customerReferralForm">
+        <div class="referral-form">
+          <div class="input-group">
+            <label class="input-label">Customer Name</label>
+            <input type="text" class="input" id="refCustomerName" placeholder="Who needs help?">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Phone Number</label>
+            <input type="tel" class="input" id="refCustomerPhone" placeholder="(xxx) xxx-xxxx">
+          </div>
+          <div class="input-group">
+            <label class="input-label">What do they need?</label>
+            <select class="input" id="refCustomerTrade">
+              <option value="">Select a service...</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Notes (optional)</label>
+            <textarea class="input" id="refCustomerNotes" placeholder="Any details..." style="min-height: 80px; resize: vertical;"></textarea>
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitCustomerReferral()">
+            Submit Referral
+          </button>
+        </div>
+        <div class="share-section">
+          <div class="share-title">Or share your referral link:</div>
+          <div class="share-link-box">
+            <div class="share-link" id="shareLink">handson.ventures/r/...</div>
+            <button class="share-copy-btn" onclick="copyShareLink()">Copy</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card hidden" id="workerReferralForm">
+        <div class="referral-form">
+          <div class="input-group">
+            <label class="input-label">Worker Name</label>
+            <input type="text" class="input" id="refWorkerName" placeholder="Their name">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Phone Number</label>
+            <input type="tel" class="input" id="refWorkerPhone" placeholder="(xxx) xxx-xxxx">
+          </div>
+          <div class="input-group">
+            <label class="input-label">Their Skills</label>
+            <input type="text" class="input" id="refWorkerSkills" placeholder="Assembly, moving, etc.">
+          </div>
+          <button class="btn btn-primary btn-full" onclick="submitWorkerReferral()">
+            Submit Referral
+          </button>
+        </div>
+      </div>
+
+      <div class="stats-section-title" style="margin-top: 24px;">Your Referrals</div>
+      <div class="glass-card">
+        <div class="referral-list" id="referralList">
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <div class="empty-title">No referrals yet</div>
+            <div class="empty-text">Start referring to earn!</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ REVIEWS TAB ═══ -->
+    <div class="tab-content" id="reviewsTab">
+      <div class="reviews-toggle">
+        <button class="toggle-btn active" onclick="switchReviewsTab('received')">Received</button>
+        <button class="toggle-btn" onclick="switchReviewsTab('given')">Given</button>
+      </div>
+
+      <div class="glass-card rating-summary" id="ratingSummary">
+        <div class="rating-big" id="ratingBig">5.0</div>
+        <div class="rating-stars" id="ratingStars">★★★★★</div>
+        <div class="rating-count" id="ratingCount">Based on 0 reviews</div>
+        <div class="rating-breakdown" id="ratingBreakdown">
+          <div class="rating-bar"><span class="bar-label">5★</span><div class="bar"><div class="bar-fill" style="width:100%"></div></div><span class="bar-count">0</span></div>
+          <div class="rating-bar"><span class="bar-label">4★</span><div class="bar"><div class="bar-fill" style="width:0%"></div></div><span class="bar-count">0</span></div>
+          <div class="rating-bar"><span class="bar-label">3★</span><div class="bar"><div class="bar-fill" style="width:0%"></div></div><span class="bar-count">0</span></div>
+          <div class="rating-bar"><span class="bar-label">2★</span><div class="bar"><div class="bar-fill" style="width:0%"></div></div><span class="bar-count">0</span></div>
+          <div class="rating-bar"><span class="bar-label">1★</span><div class="bar"><div class="bar-fill" style="width:0%"></div></div><span class="bar-count">0</span></div>
+        </div>
+      </div>
+
+      <div class="glass-card" id="reviewsList">
+        <div class="empty-state">
+          <div class="empty-icon">⭐</div>
+          <div class="empty-title">No reviews yet</div>
+          <div class="empty-text">Complete jobs to get reviews!</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══ STATS TAB ═══ -->
+    <div class="tab-content" id="statsTab">
+      <div class="stats-header glass-card">
+        <div class="stats-total" id="statsTotal">$0</div>
+        <div class="stats-period">Total Earnings</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stats-card">
+          <div class="stats-card-value green" id="statsJobs">0</div>
+          <div class="stats-card-label">Jobs Completed</div>
+        </div>
+        <div class="stats-card">
+          <div class="stats-card-value orange" id="statsReferrals">0</div>
+          <div class="stats-card-label">Referral Earnings</div>
+        </div>
+        <div class="stats-card">
+          <div class="stats-card-value yellow" id="statsPending">$0</div>
+          <div class="stats-card-label">Pending Payout</div>
+        </div>
+        <div class="stats-card">
+          <div class="stats-card-value" id="statsAvgJob">$0</div>
+          <div class="stats-card-label">Avg Job Value</div>
+        </div>
+      </div>
+
+      <div class="stats-section-title">Recent Activity</div>
+      <div class="transaction-list" id="transactionList">
+        <div class="empty-state">
+          <div class="empty-icon">📊</div>
+          <div class="empty-title">No activity yet</div>
+          <div class="empty-text">Complete jobs to see your stats!</div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Bottom Navigation -->
+  <nav class="bottom-nav">
+    <button class="nav-item active" onclick="switchTab('portfolio')">
+      <span class="nav-icon">📷</span>
+      <span class="nav-label">Portfolio</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('jobs')">
+      <span class="nav-icon">🔥</span>
+      <span class="nav-label">Jobs</span>
+      <span class="nav-badge" id="jobsBadge" style="display: none;">0</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('earn')">
+      <span class="nav-icon">💰</span>
+      <span class="nav-label">Earn</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('reviews')">
+      <span class="nav-icon">⭐</span>
+      <span class="nav-label">Reviews</span>
+    </button>
+    <button class="nav-item" onclick="switchTab('stats')">
+      <span class="nav-icon">📊</span>
+      <span class="nav-label">Stats</span>
+    </button>
+  </nav>
+
+  <!-- Upload Modal -->
+  <div class="modal" id="uploadModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <div class="modal-title">Add to Portfolio</div>
+        <button class="modal-close" onclick="closeUploadModal()">×</button>
+      </div>
+      <div class="modal-body">
+        <input type="file" id="fileInput" accept="image/*" style="display: none;">
+        <div id="uploadStep1">
+          <div class="add-photo" onclick="document.getElementById('fileInput').click()" style="height: 200px; margin-bottom: 16px;">
+            <div class="add-photo-icon" style="font-size: 48px;">📷</div>
+            <div style="margin-top: 8px; color: var(--text-muted);">Tap to select photo</div>
+          </div>
+        </div>
+        <div id="uploadStep2" class="hidden">
+          <img id="uploadPreview" style="width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: var(--radius-lg); margin-bottom: 16px;">
+          <div class="input-group">
+            <label class="input-label">Caption</label>
+            <textarea class="input" id="uploadCaption" placeholder="Describe your work..." style="min-height: 80px;"></textarea>
+          </div>
+          <div class="input-group">
+            <label class="input-label">Trade</label>
+            <select class="input" id="uploadTrade"></select>
+          </div>
+          <button class="btn btn-primary btn-full" id="uploadBtn" onclick="uploadPortfolioItem()">
+            Share to Portfolio
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+
+  <script>
+    const TRADES = {
+      assembly: '🔧', moving: '🚚', delivery: '📦', handyman: '🛠️', junk: '🗑️',
+      cleaning: '🧹', painting: '🎨', tvmount: '📺', garage: '🚗',
+      landscaping: '🌳', fencing: '🏗️', gutters: '🏠', powerwash: '💦',
+      electrical: '⚡', plumbing: '🚰', hvac: '❄️', roofing: '🔨', flooring: '🪵',
+      appliance: '🔌', solar: '☀️', dumpster: '🚛'
+    };
+
+    const TRADE_NAMES = {
+      assembly: 'Assembly', moving: 'Moving', delivery: 'Delivery', handyman: 'Handyman',
+      junk: 'Junk Removal', cleaning: 'Cleaning', painting: 'Painting', tvmount: 'TV Mount',
+      garage: 'Garage', landscaping: 'Landscaping', fencing: 'Fencing', gutters: 'Gutters',
+      powerwash: 'Powerwash', electrical: 'Electrical', plumbing: 'Plumbing', hvac: 'HVAC',
+      roofing: 'Roofing', flooring: 'Flooring', appliance: 'Appliance', solar: 'Solar',
+      dumpster: 'Dumpster'
+    };
+
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+
+    let user = null;
+    let currentTab = 'portfolio';
+    let currentReferralTab = 'customer';
+    let currentReviewsTab = 'received';
+    let portfolio = [];
+    let availableJobs = [];
+    let currentJobIndex = 0;
+    let referrals = [];
+    let reviews = [];
+    let selectedFile = null;
+
+    // ═══ INITIALIZATION ═══
+    async function init() {
+      const token = localStorage.getItem('handson_token');
+      if (!token) {
+        window.location.href = '/worker/signup.html';
+        return;
+      }
+
+      try {
+        const res = await fetch(`${API_URL}/api/auth/me`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (!res.ok) throw new Error('Session expired');
+
+        const data = await res.json();
+        user = data.user;
+
+        updateProfile();
+        loadPortfolio();
+        loadAvailableJobs();
+        loadReferrals();
+        loadReviews();
+        loadStats();
+        populateTradeSelects();
+        generateShareLink();
+        setupFileInput();
+
+      } catch (error) {
+        console.error('Auth error:', error);
+        localStorage.removeItem('handson_token');
+        window.location.href = '/worker/signup.html';
+      }
+    }
+
+    // ═══ TAB SWITCHING ═══
+    function switchTab(tab) {
+      currentTab = tab;
+
+      document.querySelectorAll('.nav-item').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase().includes(tab.slice(0, 4)));
+      });
+
+      document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.remove('active');
+      });
+      document.getElementById(`${tab}Tab`).classList.add('active');
+
+      // Load data for tab if needed
+      if (tab === 'jobs' && availableJobs.length === 0) {
+        loadAvailableJobs();
+      }
+    }
+
+    // ═══ PROFILE ═══
+    function updateProfile() {
+      if (!user) return;
+
+      const initial = user.name ? user.name[0].toUpperCase() : '?';
+      document.getElementById('profileAvatar').textContent = initial;
+      document.getElementById('profileName').textContent = user.name || 'Worker';
+      document.getElementById('statJobs').textContent = user.jobs || 0;
+      document.getElementById('statRating').textContent = user.rating?.toFixed(1) || '5.0';
+
+      const badgesContainer = document.getElementById('profileBadges');
+      if (user.trades && user.trades.length > 0) {
+        badgesContainer.innerHTML = user.trades.map(t =>
+          `<span class="badge">${TRADES[t] || ''} ${TRADE_NAMES[t] || t}</span>`
+        ).join('');
+      }
+    }
+
+    // ═══ PORTFOLIO ═══
+    async function loadPortfolio() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/portfolio/worker/${user.id}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const { items } = await res.json();
+        portfolio = items || [];
+
+        document.getElementById('statPosts').textContent = portfolio.length;
+        renderPortfolio();
+
+      } catch (error) {
+        console.error('Error loading portfolio:', error);
+      }
+    }
+
+    function renderPortfolio() {
+      const grid = document.getElementById('portfolioGrid');
+
+      const addBtn = `<div class="add-photo" onclick="openUploadModal()"><div class="add-photo-icon">+</div></div>`;
+
+      if (portfolio.length === 0) {
+        grid.innerHTML = addBtn;
+        return;
+      }
+
+      grid.innerHTML = addBtn + portfolio.map(item => `
+        <div class="portfolio-item" onclick="viewPortfolioItem('${item.id}')">
+          ${item.image_url
+            ? `<img src="${item.image_url}" alt="${item.caption || ''}" loading="lazy">`
+            : `<div style="width:100%;height:100%;background:var(--bg-card);display:flex;align-items:center;justify-content:center;font-size:32px;">${TRADES[item.trade] || '📷'}</div>`
+          }
+          <div class="portfolio-item-overlay">
+            <span style="color:white;font-size:12px;">❤️ ${item.likes || 0}</span>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ═══ JOBS SWIPE ═══
+    async function loadAvailableJobs() {
+      try {
+        const res = await fetch(`${API_URL}/api/leads?status=NEW`);
+        const { leads } = await res.json();
+        availableJobs = leads || [];
+
+        const badge = document.getElementById('jobsBadge');
+        if (availableJobs.length > 0) {
+          badge.textContent = availableJobs.length;
+          badge.style.display = 'flex';
+        } else {
+          badge.style.display = 'none';
+        }
+
+        renderJobCards();
+      } catch (error) {
+        console.error('Error loading jobs:', error);
+      }
+    }
+
+    function renderJobCards() {
+      const container = document.getElementById('jobCards');
+
+      if (availableJobs.length === 0) {
+        container.innerHTML = `
+          <div class="no-jobs">
+            <div class="no-jobs-icon">🎉</div>
+            <div class="empty-title">All caught up!</div>
+            <div class="empty-text">Check back later for new jobs</div>
+          </div>
+        `;
+        return;
+      }
+
+      const job = availableJobs[currentJobIndex];
+      if (!job) {
+        currentJobIndex = 0;
+        renderJobCards();
+        return;
+      }
+
+      const urgencyClass = job.priority === 'CRITICAL' ? '' : job.priority === 'HOT' ? 'moderate' : 'flexible';
+      const urgencyText = job.priority === 'CRITICAL' ? '🔥 Urgent' : job.priority === 'HOT' ? '⚡ Soon' : '📅 Flexible';
+
+      container.innerHTML = `
+        <div class="swipe-card" id="currentCard" data-job-id="${job.id}">
+          <div class="swipe-card-bg"></div>
+          <div class="swipe-card-content">
+            <div class="job-trade-icon">${TRADES[job.trade] || '🔧'}</div>
+
+            <div class="job-urgency ${urgencyClass}">${urgencyText}</div>
+            <h2 class="job-title">${job.title || TRADE_NAMES[job.trade] || 'Service Request'}</h2>
+            <div class="job-location">📍 ${job.city || 'Denver'}, ${job.state || 'CO'}</div>
+            <div class="job-price">$${job.revenue?.toLocaleString() || 'TBD'}</div>
+            <p class="job-description">${job.description || job.raw_text || 'Customer needs help with ' + (TRADE_NAMES[job.trade] || 'home services')}</p>
+
+            <div class="customer-preview">
+              <div class="customer-avatar">${job.customer_name?.[0] || '?'}</div>
+              <div class="customer-info">
+                <div class="customer-name">${job.customer_name || 'Customer'}</div>
+                <div class="customer-rating">⭐ New Customer</div>
+              </div>
+            </div>
+
+            <div class="swipe-actions">
+              <button class="action-btn action-pass" onclick="passJob()">✕</button>
+              <button class="action-btn action-save" onclick="saveJob()">🔖</button>
+              <button class="action-btn action-claim" onclick="claimJob()">✓ Claim</button>
+            </div>
+          </div>
+        </div>
+      `;
+
+      initSwipeGestures();
+    }
+
+    function initSwipeGestures() {
+      const card = document.getElementById('currentCard');
+      if (!card) return;
+
+      let startX, startY, currentX, currentY;
+      let isDragging = false;
+
+      card.addEventListener('touchstart', (e) => {
+        startX = e.touches[0].clientX;
+        startY = e.touches[0].clientY;
+        isDragging = true;
+      });
+
+      card.addEventListener('touchmove', (e) => {
+        if (!isDragging) return;
+        currentX = e.touches[0].clientX;
+        currentY = e.touches[0].clientY;
+
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+
+        card.style.transform = `translate(${deltaX}px, ${deltaY}px) rotate(${deltaX * 0.05}deg)`;
+      });
+
+      card.addEventListener('touchend', (e) => {
+        if (!isDragging) return;
+        isDragging = false;
+
+        const deltaX = currentX - startX;
+        const deltaY = currentY - startY;
+
+        if (Math.abs(deltaX) > 100) {
+          if (deltaX > 0) {
+            saveJob();
+          } else {
+            passJob();
+          }
+        } else if (deltaY < -100) {
+          nextJob();
+        } else {
+          card.style.transform = '';
+        }
+      });
+    }
+
+    function passJob() {
+      const card = document.getElementById('currentCard');
+      if (card) {
+        card.classList.add('swiping-left');
+        setTimeout(() => {
+          currentJobIndex++;
+          renderJobCards();
+        }, 400);
+      }
+    }
+
+    function saveJob() {
+      const card = document.getElementById('currentCard');
+      if (card) {
+        card.classList.add('swiping-right');
+        showToast('Job saved!', 'success');
+        setTimeout(() => {
+          currentJobIndex++;
+          renderJobCards();
+        }, 400);
+      }
+    }
+
+    function nextJob() {
+      const card = document.getElementById('currentCard');
+      if (card) {
+        card.classList.add('swiping-up');
+        setTimeout(() => {
+          currentJobIndex++;
+          renderJobCards();
+        }, 400);
+      }
+    }
+
+    async function claimJob() {
+      const card = document.getElementById('currentCard');
+      if (!card) return;
+
+      const jobId = card.dataset.jobId;
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/leads/${jobId}/claim`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!res.ok) throw new Error('Failed to claim');
+
+        showToast('Job claimed! 🎉', 'success');
+        card.classList.add('swiping-up');
+        setTimeout(() => {
+          currentJobIndex++;
+          loadAvailableJobs();
+        }, 400);
+
+      } catch (error) {
+        showToast('Error claiming job', 'error');
+      }
+    }
+
+    // ═══ REFERRALS ═══
+    function switchReferralTab(tab) {
+      currentReferralTab = tab;
+
+      document.querySelectorAll('.referral-tab').forEach(t => {
+        t.classList.toggle('active', t.textContent.toLowerCase().includes(tab));
+      });
+
+      document.getElementById('customerReferralForm').classList.toggle('hidden', tab !== 'customer');
+      document.getElementById('workerReferralForm').classList.toggle('hidden', tab !== 'worker');
+    }
+
+    async function loadReferrals() {
+      // Load from existing handson_referrals table
+      try {
+        const token = localStorage.getItem('handson_token');
+        const res = await fetch(`${API_URL}/api/referrals`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          referrals = data.referrals || [];
+          renderReferrals();
+
+          // Calculate total earned
+          const total = referrals.filter(r => r.status === 'PAID').reduce((sum, r) => sum + (r.payout || 0), 0);
+          document.getElementById('earnBalance').textContent = `$${total.toLocaleString()}`;
+        }
+      } catch (error) {
+        console.error('Error loading referrals:', error);
+      }
+    }
+
+    function renderReferrals() {
+      const list = document.getElementById('referralList');
+
+      if (referrals.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">🎯</div>
+            <div class="empty-title">No referrals yet</div>
+            <div class="empty-text">Start referring to earn!</div>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = referrals.map(ref => {
+        const status = ref.status?.toLowerCase() || 'pending';
+        const statusLabels = {
+          'pending': 'Awaiting Job',
+          'job_linked': 'Job Linked',
+          'work_verified': 'Work Verified',
+          'payment_confirmed': 'Ready for Payout',
+          'paid': 'Paid!',
+          'cancelled': 'Cancelled'
+        };
+
+        // Build verification pipeline
+        const steps = ['pending', 'job_linked', 'work_verified', 'payment_confirmed', 'paid'];
+        const currentIdx = steps.indexOf(status);
+
+        const pipeline = steps.map((step, idx) => {
+          const icons = { pending: '📝', job_linked: '🔗', work_verified: '📸', payment_confirmed: '💰', paid: '✅' };
+          const isComplete = idx < currentIdx;
+          const isCurrent = idx === currentIdx;
+          const stepClass = isComplete ? 'complete' : (isCurrent ? 'current' : '');
+          const connectorClass = idx < currentIdx ? 'complete' : '';
+
+          return `
+            <span class="pipeline-step ${stepClass}">${icons[step]}</span>
+            ${idx < steps.length - 1 ? `<span class="pipeline-connector ${connectorClass}"></span>` : ''}
+          `;
+        }).join('');
+
+        return `
+          <div class="referral-item" onclick="viewReferralDetails('${ref.id}')">
+            <div class="referral-status ${status}"></div>
+            <div class="referral-info">
+              <div class="referral-name">${ref.customer_name || 'Unknown'}</div>
+              <div class="referral-meta">${TRADE_NAMES[ref.trade] || ref.trade || 'Service'} • ${formatDate(ref.date || ref.created_at)}</div>
+              ${status !== 'paid' && status !== 'cancelled' ? `<div class="verification-pipeline">${pipeline}</div>` : ''}
+            </div>
+            <div class="referral-payout">
+              <span class="payout-amount ${status === 'paid' ? '' : 'pending-payout'}">$${ref.payout || 25}</span>
+              <span class="payout-status">${statusLabels[status] || status}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function viewReferralDetails(id) {
+      const ref = referrals.find(r => r.id === id);
+      if (!ref) return;
+
+      const statusLabels = {
+        'PENDING': 'Awaiting Job Link',
+        'JOB_LINKED': 'Needs Proof of Work',
+        'WORK_VERIFIED': 'Needs Payment Confirmation',
+        'PAYMENT_CONFIRMED': 'Ready for Payout!',
+        'PAID': 'Paid Out',
+        'CANCELLED': 'Cancelled'
+      };
+
+      const nextActions = {
+        'PENDING': 'Link this referral to a job once they book.',
+        'JOB_LINKED': 'Upload a photo of the completed work.',
+        'WORK_VERIFIED': 'Confirm payment was received from customer.',
+        'PAYMENT_CONFIRMED': 'Admin will process your $' + ref.payout + ' payout soon!',
+        'PAID': 'You earned $' + ref.payout + ' from this referral!',
+        'CANCELLED': 'This referral was cancelled.'
+      };
+
+      alert(`📋 Referral Details\n\nCustomer: ${ref.customer_name}\nPhone: ${ref.customer_phone}\nTrade: ${ref.trade || 'Not specified'}\n\nStatus: ${statusLabels[ref.status] || ref.status}\n\n➡️ Next: ${nextActions[ref.status] || ''}`);
+    }
+
+    async function submitCustomerReferral() {
+      const name = document.getElementById('refCustomerName').value.trim();
+      const phone = document.getElementById('refCustomerPhone').value.trim();
+      const trade = document.getElementById('refCustomerTrade').value;
+      const notes = document.getElementById('refCustomerNotes').value.trim();
+
+      if (!name || !phone) {
+        showToast('Name and phone required', 'error');
+        return;
+      }
+
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/referrals`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            customer_name: name,
+            customer_phone: phone,
+            trade: trade,
+            notes: notes,
+            referral_type: 'customer'
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to submit');
+
+        showToast('Referral submitted! 🎉', 'success');
+
+        // Clear form
+        document.getElementById('refCustomerName').value = '';
+        document.getElementById('refCustomerPhone').value = '';
+        document.getElementById('refCustomerTrade').value = '';
+        document.getElementById('refCustomerNotes').value = '';
+
+        loadReferrals();
+
+      } catch (error) {
+        showToast('Error submitting referral', 'error');
+      }
+    }
+
+    async function submitWorkerReferral() {
+      const name = document.getElementById('refWorkerName').value.trim();
+      const phone = document.getElementById('refWorkerPhone').value.trim();
+      const skills = document.getElementById('refWorkerSkills').value.trim();
+
+      if (!name || !phone) {
+        showToast('Name and phone required', 'error');
+        return;
+      }
+
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/referrals`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`,
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            customer_name: name,
+            customer_phone: phone,
+            notes: `Skills: ${skills}`,
+            referral_type: 'worker'
+          })
+        });
+
+        if (!res.ok) throw new Error('Failed to submit');
+
+        showToast('Worker referral submitted! 🎉', 'success');
+
+        // Clear form
+        document.getElementById('refWorkerName').value = '';
+        document.getElementById('refWorkerPhone').value = '';
+        document.getElementById('refWorkerSkills').value = '';
+
+        loadReferrals();
+
+      } catch (error) {
+        showToast('Error submitting referral', 'error');
+      }
+    }
+
+    function generateShareLink() {
+      const code = user?.id?.slice(0, 8).toUpperCase() || 'WORKER';
+      document.getElementById('shareLink').textContent = `handson.ventures/r/${code}`;
+    }
+
+    function copyShareLink() {
+      const link = document.getElementById('shareLink').textContent;
+      navigator.clipboard.writeText(`https://${link}`);
+      showToast('Link copied!', 'success');
+    }
+
+    // ═══ REVIEWS ═══
+    function switchReviewsTab(tab) {
+      currentReviewsTab = tab;
+
+      document.querySelectorAll('.toggle-btn').forEach(btn => {
+        btn.classList.toggle('active', btn.textContent.toLowerCase() === tab);
+      });
+
+      loadReviews();
+    }
+
+    async function loadReviews() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        // Load reviews from jobs that have ratings
+        const res = await fetch(`${API_URL}/api/jobs`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const { jobs } = await res.json();
+
+        // Extract reviews from jobs
+        reviews = (jobs || [])
+          .filter(j => currentReviewsTab === 'received' ? j.worker_rating : j.customer_rating)
+          .map(j => ({
+            id: j.id,
+            rating: currentReviewsTab === 'received' ? j.worker_rating : j.customer_rating,
+            name: currentReviewsTab === 'received' ? j.customer_name : 'You',
+            trade: j.trade,
+            date: j.completed_date || j.updated_at,
+            comment: '' // Would need to join with reviews table
+          }));
+
+        renderReviews();
+        updateRatingSummary();
+
+      } catch (error) {
+        console.error('Error loading reviews:', error);
+      }
+    }
+
+    function renderReviews() {
+      const list = document.getElementById('reviewsList');
+
+      if (reviews.length === 0) {
+        list.innerHTML = `
+          <div class="empty-state">
+            <div class="empty-icon">⭐</div>
+            <div class="empty-title">No reviews yet</div>
+            <div class="empty-text">Complete jobs to get reviews!</div>
+          </div>
+        `;
+        return;
+      }
+
+      list.innerHTML = reviews.map(review => `
+        <div class="review-card">
+          <div class="review-header">
+            <div class="reviewer-avatar">${review.name?.[0] || '?'}</div>
+            <div class="reviewer-info">
+              <div class="reviewer-name">${review.name || 'Customer'}</div>
+              <div class="review-date">${formatDate(review.date)}</div>
+            </div>
+            <div class="review-rating">${'★'.repeat(review.rating)}${'☆'.repeat(5 - review.rating)}</div>
+          </div>
+          <div class="review-job-badge">
+            ${TRADES[review.trade] || '🔧'} ${TRADE_NAMES[review.trade] || review.trade}
+          </div>
+          ${review.comment ? `<p class="review-comment">"${review.comment}"</p>` : ''}
+        </div>
+      `).join('');
+    }
+
+    function updateRatingSummary() {
+      const total = reviews.length;
+      if (total === 0) return;
+
+      const avg = reviews.reduce((sum, r) => sum + r.rating, 0) / total;
+      const counts = [0, 0, 0, 0, 0];
+      reviews.forEach(r => counts[r.rating - 1]++);
+
+      document.getElementById('ratingBig').textContent = avg.toFixed(1);
+      document.getElementById('ratingStars').textContent = '★'.repeat(Math.round(avg)) + '☆'.repeat(5 - Math.round(avg));
+      document.getElementById('ratingCount').textContent = `Based on ${total} review${total !== 1 ? 's' : ''}`;
+
+      const breakdown = document.getElementById('ratingBreakdown');
+      breakdown.innerHTML = [5, 4, 3, 2, 1].map(star => `
+        <div class="rating-bar">
+          <span class="bar-label">${star}★</span>
+          <div class="bar"><div class="bar-fill" style="width:${total > 0 ? (counts[star-1] / total * 100) : 0}%"></div></div>
+          <span class="bar-count">${counts[star-1]}</span>
+        </div>
+      `).join('');
+    }
+
+    // ═══ STATS ═══
+    async function loadStats() {
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        const res = await fetch(`${API_URL}/api/payments/worker/earnings`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        if (res.ok) {
+          const { earnings } = await res.json();
+
+          document.getElementById('statsTotal').textContent = `$${(earnings?.total || 0).toLocaleString()}`;
+          document.getElementById('statsJobs').textContent = user?.jobs || 0;
+          document.getElementById('statsPending').textContent = `$${(earnings?.pending || 0).toLocaleString()}`;
+
+          // Calculate avg
+          const jobCount = user?.jobs || 1;
+          const avgJob = Math.round((earnings?.total || 0) / jobCount);
+          document.getElementById('statsAvgJob').textContent = `$${avgJob.toLocaleString()}`;
+        }
+
+        // Load referral earnings
+        const refTotal = referrals.filter(r => r.status === 'PAID').reduce((sum, r) => sum + (r.payout || 0), 0);
+        document.getElementById('statsReferrals').textContent = `$${refTotal.toLocaleString()}`;
+
+      } catch (error) {
+        console.error('Error loading stats:', error);
+      }
+    }
+
+    // ═══ UPLOAD ═══
+    function setupFileInput() {
+      const fileInput = document.getElementById('fileInput');
+      fileInput.addEventListener('change', (e) => {
+        if (e.target.files.length > 0) {
+          selectedFile = e.target.files[0];
+          document.getElementById('uploadPreview').src = URL.createObjectURL(selectedFile);
+          document.getElementById('uploadStep1').classList.add('hidden');
+          document.getElementById('uploadStep2').classList.remove('hidden');
+        }
+      });
+    }
+
+    function openUploadModal() {
+      selectedFile = null;
+      document.getElementById('fileInput').value = '';
+      document.getElementById('uploadCaption').value = '';
+      document.getElementById('uploadStep1').classList.remove('hidden');
+      document.getElementById('uploadStep2').classList.add('hidden');
+      document.getElementById('uploadModal').classList.add('active');
+    }
+
+    function closeUploadModal() {
+      document.getElementById('uploadModal').classList.remove('active');
+    }
+
+    async function uploadPortfolioItem() {
+      if (!selectedFile) {
+        showToast('Please select an image', 'error');
+        return;
+      }
+
+      const token = localStorage.getItem('handson_token');
+      const btn = document.getElementById('uploadBtn');
+      const caption = document.getElementById('uploadCaption').value;
+      const trade = document.getElementById('uploadTrade').value;
+
+      btn.disabled = true;
+      btn.textContent = 'Uploading...';
+
+      try {
+        const formData = new FormData();
+        formData.append('image', selectedFile);
+        formData.append('caption', caption);
+        if (trade) formData.append('trade', trade);
+        formData.append('city', user?.city || 'Denver');
+
+        const res = await fetch(`${API_URL}/api/portfolio/upload`, {
+          method: 'POST',
+          headers: { 'Authorization': `Bearer ${token}` },
+          body: formData
+        });
+
+        if (!res.ok) throw new Error('Upload failed');
+
+        showToast('Added to portfolio! 🎉', 'success');
+        closeUploadModal();
+        loadPortfolio();
+
+      } catch (error) {
+        showToast('Error uploading: ' + error.message, 'error');
+      } finally {
+        btn.disabled = false;
+        btn.textContent = 'Share to Portfolio';
+      }
+    }
+
+    function viewPortfolioItem(id) {
+      // TODO: Open view modal
+      console.log('View item:', id);
+    }
+
+    // ═══ UTILS ═══
+    function populateTradeSelects() {
+      const options = Object.keys(TRADES).map(t =>
+        `<option value="${t}">${TRADES[t]} ${TRADE_NAMES[t]}</option>`
+      ).join('');
+
+      document.querySelectorAll('#refCustomerTrade, #uploadTrade').forEach(select => {
+        select.innerHTML = '<option value="">Select...</option>' + options;
+      });
+    }
+
+    function formatDate(dateStr) {
+      if (!dateStr) return '';
+      const date = new Date(dateStr);
+      return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
+
+    // Close modals on escape
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') {
+        closeUploadModal();
+      }
+    });
+
+    // Initialize
+    init();
+  </script>
+  <script src="/shared/components.js"></script>
+</body>
+</html>

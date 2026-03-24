@@ -14,6 +14,14 @@ const twilio = require('twilio');
 const WebSocket = require('ws');
 const http = require('http');
 
+// ═══ ROUTE IMPORTS ═══
+const authRoutes = require('./routes/auth');
+const jobsRoutes = require('./routes/jobs');
+const paymentsRoutes = require('./routes/payments');
+const portfolioRoutes = require('./routes/portfolio');
+const uploadRoutes = require('./routes/upload');
+const referralsRoutes = require('./routes/referrals');
+
 // ═══ CONFIGURATION ═══
 const app = express();
 const server = http.createServer(app);
@@ -25,6 +33,12 @@ app.use(express.json());
 // Serve admin dashboard
 app.get('/admin', (req, res) => {
   res.sendFile(path.join(__dirname, 'admin.html'));
+});
+
+// Serve customer pages
+app.use('/customer', express.static(path.join(__dirname, 'customer')));
+app.get('/customer/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'customer', 'index.html'));
 });
 
 // Serve worker pages
@@ -40,6 +54,9 @@ app.get('/worker/index.html', (req, res) => {
 app.get('/worker/', (req, res) => {
   res.sendFile(path.join(__dirname, 'worker', 'index.html'));
 });
+
+// Serve shared assets
+app.use('/shared', express.static(path.join(__dirname, 'shared')));
 
 // ═══ SUPABASE SETUP ═══
 const supabase = createClient(
@@ -353,6 +370,22 @@ app.post('/api/scrape', async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 });
+
+// ═══════════════════════════════════════════════════════════════════════════
+// REGISTER NEW ROUTES
+// ═══════════════════════════════════════════════════════════════════════════
+
+// Pass broadcast function to routes that need it
+jobsRoutes.setBroadcast(broadcast);
+paymentsRoutes.setBroadcast(broadcast);
+
+// Mount routes
+app.use('/api/auth', authRoutes);
+app.use('/api/jobs', jobsRoutes);
+app.use('/api/payments', paymentsRoutes);
+app.use('/api/portfolio', portfolioRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/referrals', referralsRoutes);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // START SERVER

@@ -1,0 +1,788 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Request a Service - HandsOn</title>
+  <link rel="stylesheet" href="/shared/styles.css">
+  <style>
+    .main {
+      padding: 20px 16px;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .page-header {
+      margin-bottom: 24px;
+    }
+
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 13px;
+      margin-bottom: 12px;
+    }
+
+    .back-link:hover {
+      color: var(--accent);
+    }
+
+    .page-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .page-subtitle {
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    /* Form Card */
+    .form-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .form-section {
+      margin-bottom: 24px;
+    }
+
+    .form-section:last-child {
+      margin-bottom: 0;
+    }
+
+    .form-section-title {
+      font-size: 14px;
+      font-weight: 700;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .form-section-title span {
+      font-size: 18px;
+    }
+
+    /* Service Selection */
+    .service-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+      gap: 10px;
+    }
+
+    .service-option {
+      background: var(--bg-primary);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+    }
+
+    .service-option:hover {
+      border-color: var(--text-muted);
+    }
+
+    .service-option.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .service-option-icon {
+      font-size: 24px;
+      margin-bottom: 4px;
+    }
+
+    .service-option-name {
+      font-size: 11px;
+      font-weight: 600;
+      color: var(--text-secondary);
+    }
+
+    .service-option.selected .service-option-name {
+      color: var(--accent);
+    }
+
+    /* Image Upload */
+    .image-upload-area {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius-lg);
+      padding: 32px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+    }
+
+    .image-upload-area:hover,
+    .image-upload-area.dragover {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .upload-icon {
+      font-size: 40px;
+      margin-bottom: 12px;
+      opacity: 0.7;
+    }
+
+    .upload-title {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .upload-hint {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Image Previews */
+    .image-previews {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .image-preview {
+      position: relative;
+      aspect-ratio: 1;
+      border-radius: var(--radius-md);
+      overflow: hidden;
+    }
+
+    .image-preview img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .image-preview-remove {
+      position: absolute;
+      top: 4px;
+      right: 4px;
+      width: 24px;
+      height: 24px;
+      background: rgba(0, 0, 0, 0.7);
+      border: none;
+      border-radius: 50%;
+      color: white;
+      font-size: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .image-preview-remove:hover {
+      background: var(--error);
+    }
+
+    /* Urgency Options */
+    .urgency-options {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+
+    .urgency-option {
+      background: var(--bg-primary);
+      border: 2px solid var(--border);
+      border-radius: var(--radius-lg);
+      padding: 14px 8px;
+      text-align: center;
+      cursor: pointer;
+      transition: all var(--transition-normal);
+    }
+
+    .urgency-option:hover {
+      border-color: var(--text-muted);
+    }
+
+    .urgency-option.selected {
+      border-color: var(--accent);
+      background: var(--accent-light);
+    }
+
+    .urgency-icon {
+      font-size: 20px;
+      margin-bottom: 4px;
+    }
+
+    .urgency-label {
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .urgency-desc {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .urgency-option.selected .urgency-label {
+      color: var(--accent);
+    }
+
+    /* Textarea */
+    .textarea {
+      width: 100%;
+      min-height: 120px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      color: var(--text-primary);
+      font-size: 14px;
+      font-family: inherit;
+      resize: vertical;
+      transition: border-color var(--transition-fast);
+    }
+
+    .textarea:focus {
+      outline: none;
+      border-color: var(--accent);
+    }
+
+    .textarea::placeholder {
+      color: var(--text-dark);
+    }
+
+    .char-count {
+      text-align: right;
+      font-size: 11px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
+
+    /* Address Input */
+    .address-row {
+      display: grid;
+      grid-template-columns: 2fr 1fr;
+      gap: 12px;
+    }
+
+    /* Submit Area */
+    .submit-area {
+      padding: 20px;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      position: sticky;
+      bottom: 16px;
+    }
+
+    .submit-info {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+
+    .submit-icon {
+      font-size: 32px;
+    }
+
+    .submit-text h3 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 2px;
+    }
+
+    .submit-text p {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Error States */
+    .input-error {
+      border-color: var(--error) !important;
+    }
+
+    .error-text {
+      color: var(--error);
+      font-size: 12px;
+      margin-top: 6px;
+    }
+
+    /* Success State */
+    .success-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(10, 15, 26, 0.95);
+      z-index: 1000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .success-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-xl);
+      padding: 40px;
+      text-align: center;
+      max-width: 400px;
+      animation: scaleIn 0.3s ease-out;
+    }
+
+    @keyframes scaleIn {
+      from {
+        opacity: 0;
+        transform: scale(0.9);
+      }
+      to {
+        opacity: 1;
+        transform: scale(1);
+      }
+    }
+
+    .success-icon {
+      font-size: 64px;
+      margin-bottom: 20px;
+    }
+
+    .success-title {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 8px;
+    }
+
+    .success-text {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-bottom: 24px;
+      line-height: 1.5;
+    }
+
+    /* Loading */
+    .loading-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .service-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .address-row {
+        grid-template-columns: 1fr;
+      }
+
+      .urgency-options {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Header -->
+  <header class="header">
+    <div class="header-inner">
+      <a href="/customer/" class="logo">HandsOn</a>
+      <a href="/customer/dashboard.html" class="nav-link">Dashboard</a>
+    </div>
+  </header>
+
+  <main class="main">
+    <!-- Page Header -->
+    <div class="page-header">
+      <a href="/customer/dashboard.html" class="back-link">
+        <span>←</span> Back to Dashboard
+      </a>
+      <h1 class="page-title">Request a Service</h1>
+      <p class="page-subtitle">Tell us what you need help with</p>
+    </div>
+
+    <form id="requestForm" onsubmit="return false;">
+      <!-- Service Selection -->
+      <div class="form-card">
+        <div class="form-section">
+          <h2 class="form-section-title"><span>🔧</span> What service do you need?</h2>
+          <div class="service-grid" id="serviceGrid"></div>
+          <p class="error-text hidden" id="serviceError">Please select a service</p>
+        </div>
+      </div>
+
+      <!-- Scope of Work -->
+      <div class="form-card">
+        <div class="form-section">
+          <h2 class="form-section-title"><span>📝</span> Describe the work</h2>
+          <textarea
+            class="textarea"
+            id="scopeOfWork"
+            placeholder="Please describe what you need done. The more details, the better!
+
+Example: I need help assembling a sectional sofa and two end tables from IKEA. Everything is still in boxes. I live on the 2nd floor."
+            maxlength="2000"
+          ></textarea>
+          <div class="char-count"><span id="charCount">0</span>/2000</div>
+          <p class="error-text hidden" id="scopeError">Please describe the work needed</p>
+        </div>
+
+        <div class="form-section">
+          <h2 class="form-section-title"><span>📷</span> Add photos (optional)</h2>
+          <p class="input-hint mb-md">Photos help workers understand the job and provide accurate quotes</p>
+
+          <input type="file" id="fileInput" accept="image/*" multiple style="display: none;">
+
+          <div class="image-upload-area" id="uploadArea" onclick="document.getElementById('fileInput').click()">
+            <div class="upload-icon">📤</div>
+            <div class="upload-title">Tap to add photos</div>
+            <div class="upload-hint">Up to 5 images, max 10MB each</div>
+          </div>
+
+          <div class="image-previews" id="imagePreviews"></div>
+        </div>
+      </div>
+
+      <!-- Location -->
+      <div class="form-card">
+        <div class="form-section">
+          <h2 class="form-section-title"><span>📍</span> Where is the job?</h2>
+          <div class="address-row">
+            <div class="input-group">
+              <label class="input-label">Address</label>
+              <input type="text" class="input" id="address" placeholder="123 Main St, Apt 4B">
+            </div>
+            <div class="input-group">
+              <label class="input-label">City</label>
+              <input type="text" class="input" id="city" placeholder="Denver" value="Denver">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Urgency -->
+      <div class="form-card">
+        <div class="form-section">
+          <h2 class="form-section-title"><span>⏰</span> When do you need this done?</h2>
+          <div class="urgency-options">
+            <div class="urgency-option" data-urgency="immediate" onclick="selectUrgency('immediate')">
+              <div class="urgency-icon">🔥</div>
+              <div class="urgency-label">ASAP</div>
+              <div class="urgency-desc">Today/Tomorrow</div>
+            </div>
+            <div class="urgency-option selected" data-urgency="this_week" onclick="selectUrgency('this_week')">
+              <div class="urgency-icon">📅</div>
+              <div class="urgency-label">This Week</div>
+              <div class="urgency-desc">Within 7 days</div>
+            </div>
+            <div class="urgency-option" data-urgency="flexible" onclick="selectUrgency('flexible')">
+              <div class="urgency-icon">🌿</div>
+              <div class="urgency-label">Flexible</div>
+              <div class="urgency-desc">No rush</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="form-card">
+        <div class="form-section">
+          <h2 class="form-section-title"><span>💬</span> Additional notes (optional)</h2>
+          <textarea
+            class="textarea"
+            id="notes"
+            placeholder="Any special instructions, parking info, gate codes, etc."
+            maxlength="500"
+            style="min-height: 80px;"
+          ></textarea>
+        </div>
+      </div>
+
+      <!-- Submit -->
+      <div class="submit-area">
+        <div class="submit-info">
+          <div class="submit-icon">✨</div>
+          <div class="submit-text">
+            <h3>Ready to submit?</h3>
+            <p>We'll match you with a verified local pro</p>
+          </div>
+        </div>
+        <button type="button" class="btn btn-primary btn-lg btn-full" id="submitBtn" onclick="submitRequest()">
+          Submit Request
+        </button>
+      </div>
+    </form>
+  </main>
+
+  <!-- Success Overlay -->
+  <div class="success-overlay hidden" id="successOverlay">
+    <div class="success-card">
+      <div class="success-icon">🎉</div>
+      <h2 class="success-title">Request Submitted!</h2>
+      <p class="success-text">We're matching you with a verified pro. You'll receive a notification when someone accepts your job.</p>
+      <a href="/customer/dashboard.html" class="btn btn-primary btn-lg btn-full">Back to Dashboard</a>
+    </div>
+  </div>
+
+  <script>
+    const SERVICES = [
+      { id: 'assembly', name: 'Assembly', icon: '🔧' },
+      { id: 'moving', name: 'Moving', icon: '🚚' },
+      { id: 'delivery', name: 'Delivery', icon: '📦' },
+      { id: 'handyman', name: 'Handyman', icon: '🛠️' },
+      { id: 'junk', name: 'Junk Removal', icon: '🗑️' },
+      { id: 'cleaning', name: 'Cleaning', icon: '🧹' },
+      { id: 'painting', name: 'Painting', icon: '🎨' },
+      { id: 'tvmount', name: 'TV Mount', icon: '📺' },
+      { id: 'garage', name: 'Garage', icon: '🚗' },
+      { id: 'landscaping', name: 'Landscaping', icon: '🌳' },
+      { id: 'fencing', name: 'Fencing', icon: '🏗️' },
+      { id: 'gutters', name: 'Gutters', icon: '🏠' },
+      { id: 'powerwash', name: 'Powerwash', icon: '💦' },
+      { id: 'electrical', name: 'Electrical', icon: '⚡' },
+      { id: 'plumbing', name: 'Plumbing', icon: '🚰' },
+      { id: 'hvac', name: 'HVAC', icon: '❄️' },
+      { id: 'roofing', name: 'Roofing', icon: '🔨' },
+      { id: 'flooring', name: 'Flooring', icon: '🪵' },
+      { id: 'appliance', name: 'Appliance', icon: '🔌' },
+      { id: 'solar', name: 'Solar', icon: '☀️' },
+      { id: 'dumpster', name: 'Dumpster', icon: '🚛' }
+    ];
+
+    const API_URL = window.location.hostname === 'localhost'
+      ? 'http://localhost:3000'
+      : window.location.origin;
+
+    let selectedService = null;
+    let selectedUrgency = 'this_week';
+    let uploadedImages = [];
+    let uploadedUrls = [];
+
+    function init() {
+      // Check auth
+      const token = localStorage.getItem('handson_token');
+      if (!token) {
+        window.location.href = '/customer/';
+        return;
+      }
+
+      renderServices();
+      setupFileUpload();
+      setupCharCount();
+
+      // Check for pre-selected service from URL
+      const params = new URLSearchParams(window.location.search);
+      const service = params.get('service');
+      if (service) {
+        selectService(service);
+      }
+    }
+
+    function renderServices() {
+      const grid = document.getElementById('serviceGrid');
+      grid.innerHTML = SERVICES.map(s => `
+        <div class="service-option" data-service="${s.id}" onclick="selectService('${s.id}')">
+          <div class="service-option-icon">${s.icon}</div>
+          <div class="service-option-name">${s.name}</div>
+        </div>
+      `).join('');
+    }
+
+    function selectService(id) {
+      selectedService = id;
+      document.querySelectorAll('.service-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.service === id);
+      });
+      document.getElementById('serviceError').classList.add('hidden');
+    }
+
+    function selectUrgency(urgency) {
+      selectedUrgency = urgency;
+      document.querySelectorAll('.urgency-option').forEach(el => {
+        el.classList.toggle('selected', el.dataset.urgency === urgency);
+      });
+    }
+
+    function setupCharCount() {
+      const textarea = document.getElementById('scopeOfWork');
+      const counter = document.getElementById('charCount');
+
+      textarea.addEventListener('input', () => {
+        counter.textContent = textarea.value.length;
+      });
+    }
+
+    function setupFileUpload() {
+      const uploadArea = document.getElementById('uploadArea');
+      const fileInput = document.getElementById('fileInput');
+
+      // Drag and drop
+      uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('dragover');
+      });
+
+      uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('dragover');
+      });
+
+      uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('dragover');
+        handleFiles(e.dataTransfer.files);
+      });
+
+      // File input change
+      fileInput.addEventListener('change', (e) => {
+        handleFiles(e.target.files);
+      });
+    }
+
+    function handleFiles(files) {
+      const maxFiles = 5;
+      const maxSize = 10 * 1024 * 1024; // 10MB
+
+      for (const file of files) {
+        if (uploadedImages.length >= maxFiles) {
+          alert('Maximum 5 images allowed');
+          break;
+        }
+
+        if (!file.type.startsWith('image/')) {
+          alert('Only images are allowed');
+          continue;
+        }
+
+        if (file.size > maxSize) {
+          alert('Image must be under 10MB');
+          continue;
+        }
+
+        uploadedImages.push(file);
+        renderImagePreviews();
+      }
+    }
+
+    function renderImagePreviews() {
+      const container = document.getElementById('imagePreviews');
+
+      container.innerHTML = uploadedImages.map((file, index) => `
+        <div class="image-preview">
+          <img src="${URL.createObjectURL(file)}" alt="Preview">
+          <button class="image-preview-remove" onclick="removeImage(${index})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function removeImage(index) {
+      uploadedImages.splice(index, 1);
+      renderImagePreviews();
+    }
+
+    async function uploadImages() {
+      if (uploadedImages.length === 0) return [];
+
+      const token = localStorage.getItem('handson_token');
+      const urls = [];
+
+      // For now, we'll upload as scope images once we have the job ID
+      // Return the files for later upload
+      return uploadedImages;
+    }
+
+    async function submitRequest() {
+      // Validate
+      let hasError = false;
+
+      if (!selectedService) {
+        document.getElementById('serviceError').classList.remove('hidden');
+        document.querySelector('.service-grid').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        hasError = true;
+      }
+
+      const scopeOfWork = document.getElementById('scopeOfWork').value.trim();
+      if (scopeOfWork.length < 10) {
+        document.getElementById('scopeError').classList.remove('hidden');
+        document.getElementById('scopeOfWork').classList.add('input-error');
+        if (!hasError) {
+          document.getElementById('scopeOfWork').scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+        hasError = true;
+      } else {
+        document.getElementById('scopeError').classList.add('hidden');
+        document.getElementById('scopeOfWork').classList.remove('input-error');
+      }
+
+      if (hasError) return;
+
+      const btn = document.getElementById('submitBtn');
+      btn.disabled = true;
+      btn.innerHTML = '<div class="loading-btn"><div class="loader loader-sm"></div> Submitting...</div>';
+
+      const token = localStorage.getItem('handson_token');
+
+      try {
+        // First create the job
+        const jobData = {
+          trade: selectedService,
+          scope_of_work: scopeOfWork,
+          address: document.getElementById('address').value.trim() || null,
+          city: document.getElementById('city').value.trim() || 'Denver',
+          urgency: selectedUrgency,
+          notes: document.getElementById('notes').value.trim() || null
+        };
+
+        const res = await fetch(`${API_URL}/api/jobs`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(jobData)
+        });
+
+        if (!res.ok) {
+          const error = await res.json();
+          throw new Error(error.error || 'Failed to create job');
+        }
+
+        const { job } = await res.json();
+
+        // Upload images if any
+        if (uploadedImages.length > 0) {
+          const formData = new FormData();
+          formData.append('job_id', job.id);
+          uploadedImages.forEach(file => {
+            formData.append('images', file);
+          });
+
+          await fetch(`${API_URL}/api/upload/scope`, {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${token}`
+            },
+            body: formData
+          });
+        }
+
+        // Show success
+        document.getElementById('successOverlay').classList.remove('hidden');
+
+      } catch (error) {
+        console.error('Submit error:', error);
+        alert('Error: ' + error.message);
+        btn.disabled = false;
+        btn.textContent = 'Submit Request';
+      }
+    }
+
+    init();
+  </script>
+</body>
+</html>
