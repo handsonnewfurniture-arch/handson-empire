@@ -209,6 +209,8 @@ async function scrapeCraigslist(city = 'denver', trade = 'movers') {
           const price = listing.offers?.price || '';
           const address = listing.offers?.availableAtOrFrom?.address || {};
           const location = address.addressLocality || city;
+          // Get URL from JSON-LD - can be on listing.url or item.url
+          const listingUrl = listing.url || item.url || listing['@id'] || null;
 
           const titleLower = title.toLowerCase();
           const isRelevant = keywords.some(kw => titleLower.includes(kw.toLowerCase()));
@@ -232,7 +234,7 @@ async function scrapeCraigslist(city = 'denver', trade = 'movers') {
               phone: null,
               address: address.streetAddress || '',
               notes: `Found on Craigslist ${city}. ${listing.description || ''}`.substring(0, 200),
-              link: null,
+              link: listingUrl,
               sms: `Hi! HandsOn ${trade.charAt(0).toUpperCase() + trade.slice(1)} - saw your post on Craigslist. We help with ${trade}. Free quote today. (720) 899-0383`
             });
           }
