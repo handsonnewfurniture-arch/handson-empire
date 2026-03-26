@@ -132,6 +132,50 @@
     .status-dot.online { background: var(--matrix-green); box-shadow: 0 0 6px var(--matrix-green); }
     .status-dot.warning { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
     .status-dot.error { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+    .status-dot.running {
+      background: var(--info);
+      box-shadow: 0 0 6px var(--info);
+      animation: spin 1s linear infinite;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); box-shadow: 0 0 6px var(--info); }
+      50% { box-shadow: 0 0 12px var(--info), 0 0 20px var(--info); }
+      100% { transform: rotate(360deg); box-shadow: 0 0 6px var(--info); }
+    }
+
+    .scraper-status-banner {
+      background: rgba(0, 170, 255, 0.1);
+      border: 1px solid var(--info);
+      padding: 12px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      animation: pulse 1.5s infinite;
+    }
+    .scraper-status-banner .spinner {
+      width: 16px;
+      height: 16px;
+      border: 2px solid var(--info);
+      border-top-color: transparent;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+    }
+    .btn-running {
+      background: var(--info) !important;
+      color: #000 !important;
+      pointer-events: none;
+    }
+    .btn-running::after {
+      content: '...';
+      animation: dots 1s infinite;
+    }
+    @keyframes dots {
+      0%, 20% { content: '.'; }
+      40% { content: '..'; }
+      60%, 100% { content: '...'; }
+    }
 
     @keyframes pulse {
       0%, 100% { opacity: 1; }
@@ -1679,24 +1723,45 @@
       },
 
       renderScrapers() {
-        document.getElementById('scraperCount').textContent = this.scrapers.filter(s => s.status === 'ok').length;
+        const runningCount = this.scrapers.filter(s => s.status === 'running').length;
+        const okCount = this.scrapers.filter(s => s.status === 'ok').length;
+
+        document.getElementById('scraperCount').textContent = runningCount > 0
+          ? `${runningCount} RUNNING`
+          : okCount;
+
+        // Status banner when scrapers are running
+        const statusBanner = runningCount > 0
+          ? `<div class="scraper-status-banner">
+               <div class="spinner"></div>
+               <span>SCRAPING IN PROGRESS: ${runningCount} active scanner${runningCount > 1 ? 's' : ''}</span>
+             </div>`
+          : '';
 
         document.getElementById('scrapersTable').innerHTML = `
+          ${statusBanner}
           <table class="data-table">
             <thead><tr><th>STATUS</th><th>SCRAPER</th><th>LAST_RUN</th><th style="text-align: right;">LEADS</th><th></th></tr></thead>
             <tbody>
-              ${this.scrapers.map(s => `
-                <tr>
+              ${this.scrapers.map(s => {
+                const isRunning = s.status === 'running';
+                const statusClass = isRunning ? 'running' : s.status === 'ok' ? 'online' : s.status === 'warn' ? 'warning' : 'error';
+                const statusText = isRunning ? 'RUNNING' : s.status.toUpperCase();
+                const btnClass = isRunning ? 'btn btn-running' : 'btn';
+                const btnText = isRunning ? '[RUNNING' : '[RUN]';
+
+                return `
+                <tr style="${isRunning ? 'background: rgba(0, 170, 255, 0.05);' : ''}">
                   <td>
-                    <span class="status-dot ${s.status === 'ok' ? 'online' : s.status === 'warn' ? 'warning' : 'error'}"></span>
-                    ${s.status.toUpperCase()}
+                    <span class="status-dot ${statusClass}"></span>
+                    <span style="color: ${isRunning ? 'var(--info)' : 'inherit'};">${statusText}</span>
                   </td>
                   <td>${s.name}</td>
-                  <td style="color: var(--text-muted);">${s.last}</td>
+                  <td style="color: ${isRunning ? 'var(--info)' : 'var(--text-muted)'};">${s.last}</td>
                   <td style="text-align: right;">${s.leads}</td>
-                  <td><button class="btn" onclick="app.runScraper('${s.name}')">[RUN]</button></td>
+                  <td><button class="${btnClass}" onclick="app.runScraper('${s.name}')" ${isRunning ? 'disabled' : ''}>${btnText}</button></td>
                 </tr>
-              `).join('')}
+              `}).join('')}
             </tbody>
           </table>
         `;
@@ -1985,9 +2050,12 @@
       },
 
       async runScraper(name) {
+        console.log(`[SCRAPER] Starting: ${name}`);
+
         // Find the scraper by display name
         const scraper = this.scrapers.find(s => s.name === name);
         if (!scraper) {
+          console.error(`[SCRAPER] Unknown scraper: ${name}`);
           this.showNotification(`Unknown scraper: ${name}`, 'error');
           return;
         }
@@ -1998,19 +2066,29 @@
         this.renderScrapers();
         this.showNotification(`[EXEC] RUNNING: ${name}`, 'info');
 
+        const url = `/api/scrape/${scraper.apiName}`;
+        console.log(`[SCRAPER] Calling API: ${url}`);
+
         try {
-          const response = await fetch(`/api/scrape/${scraper.apiName}`, {
+          const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ city: 'denver', trade: 'movers' })
           });
 
+          console.log(`[SCRAPER] Response status: ${response.status}`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
           const data = await response.json();
+          console.log(`[SCRAPER] Response data:`, data);
 
           if (data.success) {
             scraper.status = 'ok';
             scraper.last = 'just now';
-            scraper.leads = data.leads || 0;
+            scraper.leads = (scraper.leads || 0) + (data.leads || 0);
             this.showNotification(`[OK] ${name}: ${data.leads} leads found ($${(data.pipeline || 0).toLocaleString()})`, 'success');
 
             // Refresh leads list
@@ -2020,9 +2098,10 @@
           } else {
             scraper.status = 'error';
             scraper.last = 'failed';
-            this.showNotification(`[ERR] ${name}: ${data.error}`, 'error');
+            this.showNotification(`[ERR] ${name}: ${data.error || 'Unknown error'}`, 'error');
           }
         } catch (error) {
+          console.error(`[SCRAPER] Error:`, error);
           scraper.status = 'error';
           scraper.last = 'failed';
           this.showNotification(`[ERR] ${name}: ${error.message}`, 'error');
@@ -2032,6 +2111,7 @@
       },
 
       async runAllScrapers() {
+        console.log('[SCRAPER] Starting full scan...');
         this.showNotification('[EXEC] INITIATING_FULL_SCAN... (45+ sources)', 'info');
 
         // Update all scrapers to running state
@@ -2041,21 +2121,33 @@
         });
         this.renderScrapers();
 
+        const url = '/api/scrape/all';
+        console.log(`[SCRAPER] Calling API: ${url}`);
+
         try {
-          const response = await fetch(`/api/scrape/all`, {
+          const response = await fetch(url, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
 
+          console.log(`[SCRAPER] Response status: ${response.status}`);
+
+          if (!response.ok) {
+            throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+          }
+
           const data = await response.json();
+          console.log(`[SCRAPER] Response data:`, data);
 
           if (data.success) {
-            this.showNotification('[OK] Full scan initiated - results will stream in via WebSocket', 'success');
+            this.showNotification('[OK] Full scan initiated - results streaming via WebSocket', 'success');
+            // Keep scrapers in running state - will update when WebSocket events arrive
           } else {
             this.showNotification(`[ERR] ${data.message || data.error}`, 'error');
             this.scrapers.forEach(s => { s.status = 'ok'; s.last = 'ready'; });
           }
         } catch (error) {
+          console.error(`[SCRAPER] Error:`, error);
           this.showNotification(`[ERR] ${error.message}`, 'error');
           this.scrapers.forEach(s => { s.status = 'ok'; s.last = 'ready'; });
         }
