@@ -3,30 +3,117 @@
 // Scores leads based on multiple signals for better prioritization
 // ══════════════════════════════════════════════════════════════════════════════
 
-// Revenue estimates by trade (average job value)
+// Revenue estimates by trade (average job value) - 50+ Home Service Types
 const TRADE_REVENUE = {
-  assembly: 150,
-  moving: 350,
-  delivery: 100,
+  // ═══ REPAIR & MAINTENANCE ═══
+  plumbing: 350,
+  electrical: 400,
+  hvac: 650,
+  appliance: 250,
+  garage_door: 400,
+  roof_repair: 800,
   handyman: 200,
-  junk: 200,
-  cleaning: 175,
-  painting: 500,
-  tvmount: 125,
-  garage: 300,
-  landscaping: 400,
-  fencing: 2500,
+
+  // ═══ CONSTRUCTION & RENOVATION ═══
+  remodeling: 15000,
+  kitchen_remodel: 25000,
+  bathroom_remodel: 12000,
+  basement_finishing: 20000,
+  home_addition: 50000,
+  flooring: 3500,
+  cabinet: 5000,
+  countertop: 3000,
+  drywall: 1500,
+  window_door: 2500,
+  deck_patio: 8000,
+
+  // ═══ OUTDOOR & LANDSCAPING ═══
+  lawn_mowing: 150,
+  landscaping: 2500,
+  tree_service: 800,
+  gardening: 300,
+  irrigation: 1500,
+  fencing: 4000,
+  outdoor_lighting: 800,
+  snow_removal: 200,
+  gutter_cleaning: 200,
   gutters: 250,
-  powerwash: 300,
-  electrical: 350,
-  plumbing: 300,
-  hvac: 500,
-  roofing: 5000,
-  flooring: 2000,
-  appliance: 200,
-  solar: 15000,
-  dumpster: 400
+
+  // ═══ CLEANING SERVICES ═══
+  house_cleaning: 175,
+  deep_cleaning: 350,
+  move_cleaning: 400,
+  carpet_cleaning: 250,
+  upholstery: 200,
+  window_cleaning: 300,
+  powerwash: 350,
+  chimney: 250,
+  cleaning: 175,
+
+  // ═══ SAFETY & SECURITY ═══
+  security: 1500,
+  cctv: 1200,
+  smart_home: 2000,
+  fire_alarm: 500,
+  locksmith: 200,
+  pest_control: 300,
+
+  // ═══ INTERIOR & HOME IMPROVEMENT ═══
+  interior_painting: 2500,
+  exterior_painting: 4000,
+  painting: 3000,
+  wallpaper: 800,
+  interior_design: 3000,
+  home_staging: 1500,
+  assembly: 175,
+  furniture_assembly: 175,
+  closet_organization: 800,
+  tvmount: 150,
+
+  // ═══ MOVING & STORAGE ═══
+  moving: 450,
+  movers: 450,
+  local_moving: 400,
+  long_distance_moving: 2500,
+  packing: 300,
+  junk: 350,
+  junk_removal: 350,
+  storage: 150,
+  delivery: 150,
+
+  // ═══ SPECIALTY / MODERN ═══
+  smart_home_automation: 3000,
+  solar: 20000,
+  ev_charger: 1500,
+  energy_audit: 400,
+  water_filtration: 800,
+
+  // ═══ LEGACY / GENERAL ═══
+  roofing: 8000,
+  dumpster: 400,
+  trailer: 200,
+  garage: 400
 };
+
+// Trade categories for grouping leads
+const TRADE_CATEGORIES = {
+  REPAIR_MAINTENANCE: ['plumbing', 'electrical', 'hvac', 'appliance', 'garage_door', 'roof_repair', 'handyman'],
+  CONSTRUCTION_RENOVATION: ['remodeling', 'kitchen_remodel', 'bathroom_remodel', 'basement_finishing', 'home_addition', 'flooring', 'cabinet', 'countertop', 'drywall', 'window_door', 'deck_patio'],
+  OUTDOOR_LANDSCAPING: ['lawn_mowing', 'landscaping', 'tree_service', 'gardening', 'irrigation', 'fencing', 'outdoor_lighting', 'snow_removal', 'gutter_cleaning', 'gutters'],
+  CLEANING: ['house_cleaning', 'deep_cleaning', 'move_cleaning', 'carpet_cleaning', 'upholstery', 'window_cleaning', 'powerwash', 'chimney', 'cleaning'],
+  SAFETY_SECURITY: ['security', 'cctv', 'smart_home', 'fire_alarm', 'locksmith', 'pest_control'],
+  INTERIOR_IMPROVEMENT: ['interior_painting', 'exterior_painting', 'painting', 'wallpaper', 'interior_design', 'home_staging', 'assembly', 'furniture_assembly', 'closet_organization', 'tvmount'],
+  MOVING_STORAGE: ['moving', 'movers', 'local_moving', 'long_distance_moving', 'packing', 'junk', 'junk_removal', 'storage', 'delivery'],
+  SPECIALTY_MODERN: ['smart_home_automation', 'solar', 'ev_charger', 'energy_audit', 'water_filtration']
+};
+
+// Get category for a trade
+function getTradeCategory(trade) {
+  for (const [category, trades] of Object.entries(TRADE_CATEGORIES)) {
+    if (trades.includes(trade)) return category;
+  }
+  return 'OTHER';
+}
 
 // Urgency keywords and their scores
 const URGENCY_SIGNALS = {
@@ -277,7 +364,9 @@ module.exports = {
   qualifyLead,
   qualifyLeads,
   filterQualifiedLeads,
+  getTradeCategory,
   TRADE_REVENUE,
+  TRADE_CATEGORIES,
   URGENCY_SIGNALS,
   QUALITY_SIGNALS
 };

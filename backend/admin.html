@@ -3,249 +3,866 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>HandsOn Empire - Command Center</title>
+  <title>HANDSON_EMPIRE // COMMAND_CENTER</title>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-      background: #0a0f1a;
-      color: #f1f5f9;
-      min-height: 100vh;
+    :root {
+      --matrix-green: #00ff41;
+      --matrix-dim: #00aa2a;
+      --matrix-dark: #003d00;
+      --terminal-bg: #0a0a0a;
+      --terminal-border: #00ff4133;
+      --text-primary: #00ff41;
+      --text-dim: #00aa2a;
+      --text-muted: #006600;
+      --danger: #ff0040;
+      --warning: #ffaa00;
+      --info: #00aaff;
     }
 
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'JetBrains Mono', 'Fira Code', 'Courier New', monospace;
+      background: var(--terminal-bg);
+      color: var(--text-primary);
+      min-height: 100vh;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Matrix Rain Background */
+    #matrix-bg {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 0;
+      opacity: 0.05;
+      pointer-events: none;
+    }
+
+    /* Scanline Effect */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: repeating-linear-gradient(
+        0deg,
+        rgba(0, 0, 0, 0.15),
+        rgba(0, 0, 0, 0.15) 1px,
+        transparent 1px,
+        transparent 2px
+      );
+      pointer-events: none;
+      z-index: 1000;
+    }
+
+    /* CRT Glow */
+    body::after {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: radial-gradient(ellipse at center, transparent 0%, rgba(0,0,0,0.4) 100%);
+      pointer-events: none;
+      z-index: 999;
+    }
+
+    .main-content {
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
     .header {
-      background: #0f1623;
-      border-bottom: 1px solid #1e293b;
-      padding: 16px 20px;
+      background: linear-gradient(180deg, #0f0f0f 0%, var(--terminal-bg) 100%);
+      border-bottom: 1px solid var(--matrix-green);
+      padding: 12px 20px;
       position: sticky;
       top: 0;
       z-index: 100;
       display: flex;
       align-items: center;
       justify-content: space-between;
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.1);
     }
-    .logo { font-weight: 800; font-size: 20px; background: linear-gradient(135deg, #f97316, #ea580c); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
-    .user { display: flex; align-items: center; gap: 12px; }
-    .avatar { width: 36px; height: 36px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ea580c); display: flex; align-items: center; justify-content: center; font-weight: 700; }
 
-    .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+    .logo {
+      font-weight: 700;
+      font-size: 16px;
+      color: var(--matrix-green);
+      text-shadow: 0 0 10px var(--matrix-green), 0 0 20px var(--matrix-green);
+      letter-spacing: 2px;
+    }
+    .logo::before { content: '[ '; opacity: 0.5; }
+    .logo::after { content: ' ]'; opacity: 0.5; }
 
+    .system-status {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      font-size: 11px;
+    }
+    .status-item {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      animation: pulse 2s infinite;
+    }
+    .status-dot.online { background: var(--matrix-green); box-shadow: 0 0 6px var(--matrix-green); }
+    .status-dot.warning { background: var(--warning); box-shadow: 0 0 6px var(--warning); }
+    .status-dot.error { background: var(--danger); box-shadow: 0 0 6px var(--danger); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    @keyframes blink {
+      0%, 50% { opacity: 1; }
+      51%, 100% { opacity: 0; }
+    }
+
+    .cursor {
+      display: inline-block;
+      width: 8px;
+      height: 14px;
+      background: var(--matrix-green);
+      animation: blink 1s infinite;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+
+    .container { max-width: 1600px; margin: 0 auto; padding: 20px; }
+
+    /* Tabs */
     .tabs {
       display: flex;
-      gap: 4px;
-      margin-bottom: 24px;
-      border-bottom: 1px solid #1e293b;
-      padding-bottom: 12px;
+      gap: 0;
+      margin-bottom: 20px;
+      border: 1px solid var(--terminal-border);
+      background: rgba(0, 255, 65, 0.02);
       overflow-x: auto;
     }
     .tab {
       background: transparent;
-      border: 1px solid transparent;
-      color: #64748b;
-      padding: 8px 16px;
-      border-radius: 8px;
+      border: none;
+      border-right: 1px solid var(--terminal-border);
+      color: var(--text-dim);
+      padding: 10px 20px;
       cursor: pointer;
-      font-size: 13px;
-      font-weight: 600;
-      white-space: nowrap;
+      font-family: inherit;
+      font-size: 11px;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       transition: all 0.2s;
+      position: relative;
     }
-    .tab:hover { color: #94a3b8; }
+    .tab:hover {
+      background: rgba(0, 255, 65, 0.05);
+      color: var(--matrix-green);
+    }
     .tab.active {
-      background: rgba(249,115,22,0.15);
-      border-color: rgba(249,115,22,0.4);
-      color: #f97316;
+      background: rgba(0, 255, 65, 0.1);
+      color: var(--matrix-green);
+      text-shadow: 0 0 10px var(--matrix-green);
     }
+    .tab.active::before {
+      content: '> ';
+    }
+    .tab:last-child { border-right: none; }
 
     .tab-content { display: none; }
     .tab-content.active { display: block; }
 
+    /* Terminal Window */
+    .terminal-window {
+      background: rgba(0, 20, 0, 0.6);
+      border: 1px solid var(--terminal-border);
+      margin-bottom: 16px;
+      position: relative;
+    }
+    .terminal-header {
+      background: rgba(0, 255, 65, 0.05);
+      border-bottom: 1px solid var(--terminal-border);
+      padding: 8px 14px;
+      font-size: 10px;
+      color: var(--text-dim);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .terminal-title {
+      text-transform: uppercase;
+      letter-spacing: 2px;
+    }
+    .terminal-title::before { content: '// '; opacity: 0.5; }
+    .terminal-body {
+      padding: 16px;
+    }
+
+    /* KPI Grid */
     .kpi-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 14px;
-      margin-bottom: 24px;
+      grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
     }
     .kpi-card {
-      background: #0f1623;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 18px;
+      background: rgba(0, 20, 0, 0.4);
+      border: 1px solid var(--terminal-border);
+      padding: 16px;
+      position: relative;
+      overflow: hidden;
     }
-    .kpi-label { font-size: 11px; color: #64748b; font-weight: 600; margin-bottom: 8px; }
-    .kpi-value { font-size: 28px; font-weight: 800; color: #f97316; margin-bottom: 4px; }
-    .kpi-sub { font-size: 12px; color: #64748b; }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 3px;
+      height: 100%;
+      background: var(--matrix-green);
+      opacity: 0.5;
+    }
+    .kpi-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      letter-spacing: 1px;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+    }
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--matrix-green);
+      text-shadow: 0 0 20px rgba(0, 255, 65, 0.5);
+      font-variant-numeric: tabular-nums;
+    }
+    .kpi-value.danger { color: var(--danger); text-shadow: 0 0 20px rgba(255, 0, 64, 0.5); }
+    .kpi-value.warning { color: var(--warning); text-shadow: 0 0 20px rgba(255, 170, 0, 0.5); }
+    .kpi-value.info { color: var(--info); text-shadow: 0 0 20px rgba(0, 170, 255, 0.5); }
+    .kpi-sub {
+      font-size: 10px;
+      color: var(--text-muted);
+      margin-top: 4px;
+    }
 
+    /* Charts */
     .chart-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
       gap: 16px;
-      margin-bottom: 24px;
+      margin-bottom: 20px;
     }
-    .chart-card {
-      background: #0f1623;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      padding: 20px;
-    }
-    .chart-title { font-size: 13px; font-weight: 700; color: #64748b; margin-bottom: 16px; }
 
-    .table {
-      background: #0f1623;
-      border: 1px solid #1e293b;
-      border-radius: 12px;
-      overflow: hidden;
+    /* Table */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
     }
-    .table-header {
-      padding: 12px 16px;
-      border-bottom: 1px solid #1e293b;
+    .data-table th {
+      background: rgba(0, 255, 65, 0.05);
+      border: 1px solid var(--terminal-border);
+      padding: 10px 14px;
+      text-align: left;
+      font-size: 10px;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 500;
+    }
+    .data-table td {
+      border: 1px solid var(--terminal-border);
+      padding: 10px 14px;
       font-size: 12px;
-      font-weight: 700;
-      color: #64748b;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      background: rgba(0, 20, 0, 0.3);
     }
-    .table-row {
-      padding: 12px 16px;
-      border-bottom: 1px solid #0f1623;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      transition: background 0.2s;
+    .data-table tr:hover td {
+      background: rgba(0, 255, 65, 0.05);
     }
-    .table-row:hover { background: rgba(249,115,22,0.05); }
 
+    /* Badges */
     .badge {
-      border-radius: 4px;
+      display: inline-block;
       padding: 2px 8px;
-      font-size: 11px;
+      font-size: 9px;
       font-weight: 700;
-      white-space: nowrap;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      border: 1px solid;
     }
-    .badge-critical { background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; }
-    .badge-hot { background: rgba(249,115,22,0.15); color: #f97316; border: 1px solid #f97316; }
-    .badge-success { background: rgba(34,197,94,0.15); color: #22c55e; border: 1px solid #22c55e; }
-    .badge-warning { background: rgba(234,179,8,0.15); color: #eab308; border: 1px solid #eab308; }
+    .badge-critical {
+      color: var(--danger);
+      border-color: var(--danger);
+      background: rgba(255, 0, 64, 0.1);
+      animation: pulse 1s infinite;
+    }
+    .badge-hot {
+      color: var(--warning);
+      border-color: var(--warning);
+      background: rgba(255, 170, 0, 0.1);
+    }
+    .badge-warm {
+      color: var(--matrix-green);
+      border-color: var(--matrix-green);
+      background: rgba(0, 255, 65, 0.1);
+    }
+    .badge-success {
+      color: var(--matrix-green);
+      border-color: var(--matrix-green);
+      background: rgba(0, 255, 65, 0.1);
+    }
 
+    /* Buttons */
     .btn {
-      background: rgba(249,115,22,0.15);
-      border: 1px solid rgba(249,115,22,0.3);
-      color: #f97316;
-      border-radius: 6px;
-      padding: 6px 14px;
+      background: transparent;
+      border: 1px solid var(--matrix-green);
+      color: var(--matrix-green);
+      padding: 8px 16px;
+      font-family: inherit;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       cursor: pointer;
-      font-size: 12px;
-      font-weight: 600;
       transition: all 0.2s;
     }
-    .btn:hover { background: rgba(249,115,22,0.25); }
-
-    .status-dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      display: inline-block;
-      margin-right: 6px;
+    .btn:hover {
+      background: var(--matrix-green);
+      color: var(--terminal-bg);
+      box-shadow: 0 0 20px rgba(0, 255, 65, 0.4);
     }
-    .status-ok { background: #22c55e; }
-    .status-warn { background: #f97316; }
-    .status-error { background: #ef4444; }
+    .btn-danger {
+      border-color: var(--danger);
+      color: var(--danger);
+    }
+    .btn-danger:hover {
+      background: var(--danger);
+      box-shadow: 0 0 20px rgba(255, 0, 64, 0.4);
+    }
 
-    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
-    .pulse { animation: pulse 2s infinite; }
+    /* Inbox Styles */
+    .inbox-container {
+      display: grid;
+      grid-template-columns: 300px 1fr;
+      gap: 0;
+      height: calc(100vh - 200px);
+      border: 1px solid var(--terminal-border);
+      background: rgba(0, 20, 0, 0.4);
+    }
+    .conversation-list {
+      border-right: 1px solid var(--terminal-border);
+      overflow-y: auto;
+    }
+    .conv-search {
+      padding: 12px;
+      border-bottom: 1px solid var(--terminal-border);
+    }
+    .conv-search input {
+      width: 100%;
+      background: rgba(0, 20, 0, 0.6);
+      border: 1px solid var(--terminal-border);
+      padding: 10px 12px;
+      color: var(--matrix-green);
+      font-family: inherit;
+      font-size: 12px;
+    }
+    .conv-search input::placeholder { color: var(--text-muted); }
+    .conv-search input:focus {
+      outline: none;
+      border-color: var(--matrix-green);
+      box-shadow: 0 0 10px rgba(0, 255, 65, 0.2);
+    }
+
+    .conversation-item {
+      padding: 12px 14px;
+      border-bottom: 1px solid var(--terminal-border);
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .conversation-item:hover {
+      background: rgba(0, 255, 65, 0.05);
+    }
+    .conversation-item.active {
+      background: rgba(0, 255, 65, 0.1);
+      border-left: 2px solid var(--matrix-green);
+    }
+    .conversation-item.unread {
+      background: rgba(0, 170, 255, 0.05);
+    }
+    .conv-header {
+      display: flex;
+      justify-content: space-between;
+      margin-bottom: 4px;
+    }
+    .conv-name {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--matrix-green);
+    }
+    .conv-time {
+      font-size: 10px;
+      color: var(--text-muted);
+    }
+    .conv-preview {
+      font-size: 11px;
+      color: var(--text-dim);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .chat-panel {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    .chat-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid var(--terminal-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: rgba(0, 255, 65, 0.02);
+    }
+    .chat-customer h3 {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--matrix-green);
+      margin-bottom: 2px;
+    }
+    .chat-customer p {
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .chat-actions { display: flex; gap: 8px; }
+
+    .chat-messages {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+    .message {
+      max-width: 70%;
+      padding: 12px 16px;
+      font-size: 13px;
+      line-height: 1.5;
+      position: relative;
+    }
+    .message.outbound {
+      align-self: flex-end;
+      background: rgba(0, 255, 65, 0.1);
+      border: 1px solid var(--terminal-border);
+      color: var(--matrix-green);
+    }
+    .message.outbound::after {
+      content: '>';
+      position: absolute;
+      right: -16px;
+      top: 12px;
+      color: var(--text-muted);
+    }
+    .message.inbound {
+      align-self: flex-start;
+      background: rgba(0, 170, 255, 0.1);
+      border: 1px solid rgba(0, 170, 255, 0.3);
+      color: var(--info);
+    }
+    .message.inbound::before {
+      content: '<';
+      position: absolute;
+      left: -16px;
+      top: 12px;
+      color: var(--text-muted);
+    }
+    .message-meta {
+      font-size: 9px;
+      color: var(--text-muted);
+      margin-top: 6px;
+    }
+
+    .call-message {
+      background: rgba(170, 0, 255, 0.1);
+      border: 1px solid rgba(170, 0, 255, 0.3);
+      padding: 14px;
+      max-width: 80%;
+    }
+    .call-message.outbound { align-self: flex-end; }
+    .call-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+      color: #aa00ff;
+    }
+    .call-transcript {
+      background: rgba(0, 0, 0, 0.4);
+      padding: 10px;
+      font-size: 11px;
+      color: var(--text-dim);
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid var(--terminal-border);
+    }
+    .call-outcome {
+      display: inline-block;
+      margin-top: 10px;
+      padding: 4px 10px;
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+    .call-outcome.booked {
+      color: var(--matrix-green);
+      border: 1px solid var(--matrix-green);
+    }
+    .call-outcome.followup {
+      color: var(--warning);
+      border: 1px solid var(--warning);
+    }
+
+    .chat-input {
+      padding: 14px 18px;
+      border-top: 1px solid var(--terminal-border);
+      display: flex;
+      gap: 10px;
+      background: rgba(0, 255, 65, 0.02);
+    }
+    .chat-input input {
+      flex: 1;
+      background: rgba(0, 20, 0, 0.6);
+      border: 1px solid var(--terminal-border);
+      padding: 12px 14px;
+      color: var(--matrix-green);
+      font-family: inherit;
+      font-size: 13px;
+    }
+    .chat-input input:focus {
+      outline: none;
+      border-color: var(--matrix-green);
+    }
+
+    .empty-chat {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: var(--text-muted);
+    }
+    .empty-chat-icon {
+      font-size: 48px;
+      margin-bottom: 16px;
+      opacity: 0.3;
+    }
+
+    /* ASCII Art Decorations */
+    .ascii-border {
+      color: var(--text-muted);
+      font-size: 10px;
+      white-space: pre;
+      line-height: 1;
+    }
+
+    /* Scrollbar */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: var(--terminal-bg); }
+    ::-webkit-scrollbar-thumb { background: var(--matrix-dark); }
+    ::-webkit-scrollbar-thumb:hover { background: var(--matrix-dim); }
+
+    /* Workers Grid */
+    .workers-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 12px;
+    }
+    .worker-card {
+      background: rgba(0, 20, 0, 0.4);
+      border: 1px solid var(--terminal-border);
+      padding: 14px;
+    }
+    .worker-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .worker-avatar {
+      width: 40px;
+      height: 40px;
+      background: rgba(0, 255, 65, 0.1);
+      border: 1px solid var(--matrix-green);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+      color: var(--matrix-green);
+    }
+    .worker-info h4 {
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--matrix-green);
+    }
+    .worker-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .worker-stat {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 8px;
+      border: 1px solid var(--terminal-border);
+    }
+    .worker-stat-label {
+      font-size: 9px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+    }
+    .worker-stat-value {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--matrix-green);
+    }
+
+    .unread-badge {
+      background: var(--danger);
+      color: white;
+      font-size: 9px;
+      padding: 2px 6px;
+      margin-left: 6px;
+    }
   </style>
 </head>
 <body>
-  <div class="header">
-    <div class="logo">⚡ HandsOn Empire</div>
-    <div class="user">
-      <div>
-        <div style="font-size: 13px; font-weight: 600;">Tiger McBride</div>
-        <div style="font-size: 11px; color: #64748b;">Admin</div>
-      </div>
-      <div class="avatar">TM</div>
-    </div>
-  </div>
+  <!-- Matrix Rain Canvas -->
+  <canvas id="matrix-bg"></canvas>
 
-  <div class="container">
-    <div class="tabs">
-      <button class="tab active" onclick="app.switchTab('overview')">Overview</button>
-      <button class="tab" onclick="app.switchTab('leads')">Leads</button>
-      <button class="tab" onclick="app.switchTab('workers')">Workers</button>
-      <button class="tab" onclick="app.switchTab('revenue')">Revenue</button>
-      <button class="tab" onclick="app.switchTab('scrapers')">Scrapers</button>
-      <button class="tab" onclick="app.switchTab('analytics')">Analytics</button>
-      <button class="tab" onclick="app.switchTab('customers')">Customers</button>
-    </div>
-
-    <!-- OVERVIEW TAB -->
-    <div id="overview" class="tab-content active">
-      <div class="kpi-grid" id="kpiGrid"></div>
-      <div class="chart-grid">
-        <div class="chart-card">
-          <div class="chart-title">WEEKLY LEAD ACTIVITY</div>
-          <canvas id="weeklyChart"></canvas>
+  <div class="main-content">
+    <div class="header">
+      <div class="logo">HANDSON_EMPIRE</div>
+      <div class="system-status">
+        <div class="status-item">
+          <span class="status-dot online"></span>
+          <span>SYSTEM:ONLINE</span>
         </div>
-        <div class="chart-card">
-          <div class="chart-title">PIPELINE BY TRADE ($K)</div>
-          <canvas id="tradeChart"></canvas>
+        <div class="status-item">
+          <span class="status-dot online"></span>
+          <span>DB:CONNECTED</span>
+        </div>
+        <div class="status-item">
+          <span class="status-dot online"></span>
+          <span>API:ACTIVE</span>
+        </div>
+        <div class="status-item" id="clockDisplay">00:00:00</div>
+      </div>
+    </div>
+
+    <div class="container">
+      <div class="tabs">
+        <button class="tab active" onclick="app.switchTab('overview')">OVERVIEW</button>
+        <button class="tab" onclick="app.switchTab('leads')">LEADS</button>
+        <button class="tab" onclick="app.switchTab('workers')">WORKERS</button>
+        <button class="tab" onclick="app.switchTab('revenue')">REVENUE</button>
+        <button class="tab" onclick="app.switchTab('scrapers')">SCRAPERS</button>
+        <button class="tab" onclick="app.switchTab('analytics')">ANALYTICS</button>
+        <button class="tab" onclick="app.switchTab('inbox')" style="position: relative;">
+          INBOX
+          <span id="inboxBadge" class="unread-badge" style="display: none;">0</span>
+        </button>
+      </div>
+
+      <!-- OVERVIEW TAB -->
+      <div id="overview" class="tab-content active">
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">SYSTEM_STATUS</span>
+            <span id="lastUpdate">LAST_UPDATE: --:--:--</span>
+          </div>
+          <div class="terminal-body">
+            <div class="kpi-grid" id="kpiGrid"></div>
+          </div>
+        </div>
+
+        <div class="chart-grid">
+          <div class="terminal-window">
+            <div class="terminal-header">
+              <span class="terminal-title">LEAD_ACTIVITY_7D</span>
+            </div>
+            <div class="terminal-body">
+              <canvas id="weeklyChart"></canvas>
+            </div>
+          </div>
+          <div class="terminal-window">
+            <div class="terminal-header">
+              <span class="terminal-title">PIPELINE_BY_TRADE</span>
+            </div>
+            <div class="terminal-body">
+              <canvas id="tradeChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">SYSTEM_ALERTS</span>
+          </div>
+          <div class="terminal-body" id="alerts"></div>
         </div>
       </div>
-      <div id="alerts"></div>
-    </div>
 
-    <!-- LEADS TAB -->
-    <div id="leads" class="tab-content">
-      <div class="table" id="leadsTable"></div>
-    </div>
-
-    <!-- WORKERS TAB -->
-    <div id="workers" class="tab-content">
-      <div id="workersGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 14px;"></div>
-    </div>
-
-    <!-- REVENUE TAB -->
-    <div id="revenue" class="tab-content">
-      <div class="kpi-grid" id="revenueKpis"></div>
-      <div class="table" id="transactionsTable"></div>
-    </div>
-
-    <!-- SCRAPERS TAB -->
-    <div id="scrapers" class="tab-content">
-      <div style="display: flex; justify-content: space-between; margin-bottom: 16px;">
-        <div style="font-size: 14px; color: #64748b;"><span id="scraperCount">0</span> scrapers configured</div>
-        <button class="btn" onclick="app.runAllScrapers()">▶ Run All Scrapers</button>
+      <!-- LEADS TAB -->
+      <div id="leads" class="tab-content">
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">LEAD_DATABASE</span>
+            <button class="btn" onclick="app.runAllScrapers()">[ REFRESH ]</button>
+          </div>
+          <div class="terminal-body" id="leadsTable"></div>
+        </div>
       </div>
-      <div id="scrapersTable"></div>
-    </div>
 
-    <!-- ANALYTICS TAB -->
-    <div id="analytics" class="tab-content">
-      <div class="chart-card" style="margin-bottom: 20px;">
-        <div class="chart-title">LEAD FUNNEL</div>
-        <div id="funnelChart"></div>
+      <!-- WORKERS TAB -->
+      <div id="workers" class="tab-content">
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">WORKER_ROSTER</span>
+          </div>
+          <div class="terminal-body">
+            <div class="workers-grid" id="workersGrid"></div>
+          </div>
+        </div>
       </div>
-      <div class="chart-card">
-        <div class="chart-title">COMPETITIVE COMPARISON</div>
-        <div id="comparisonTable"></div>
-      </div>
-    </div>
 
-    <!-- CUSTOMERS TAB -->
-    <div id="customers" class="tab-content">
-      <div class="kpi-grid" id="customerKpis"></div>
-      <div class="table" id="customersTable"></div>
+      <!-- REVENUE TAB -->
+      <div id="revenue" class="tab-content">
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">REVENUE_METRICS</span>
+          </div>
+          <div class="terminal-body">
+            <div class="kpi-grid" id="revenueKpis"></div>
+          </div>
+        </div>
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">TRANSACTION_LOG</span>
+          </div>
+          <div class="terminal-body" id="transactionsTable"></div>
+        </div>
+      </div>
+
+      <!-- SCRAPERS TAB -->
+      <div id="scrapers" class="tab-content">
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">SCRAPER_STATUS</span>
+            <div>
+              <span id="scraperCount">0</span> ACTIVE
+              <button class="btn" style="margin-left: 12px;" onclick="app.runAllScrapers()">[ RUN_ALL ]</button>
+            </div>
+          </div>
+          <div class="terminal-body" id="scrapersTable"></div>
+        </div>
+      </div>
+
+      <!-- ANALYTICS TAB -->
+      <div id="analytics" class="tab-content">
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">CONVERSION_FUNNEL</span>
+          </div>
+          <div class="terminal-body" id="funnelChart"></div>
+        </div>
+        <div class="terminal-window">
+          <div class="terminal-header">
+            <span class="terminal-title">COMPETITIVE_ANALYSIS</span>
+          </div>
+          <div class="terminal-body" id="comparisonTable"></div>
+        </div>
+      </div>
+
+      <!-- INBOX TAB -->
+      <div id="inbox" class="tab-content">
+        <div class="inbox-container">
+          <div class="conversation-list">
+            <div class="conv-search">
+              <input type="text" placeholder="> search_conversations..." oninput="app.filterConversations(this.value)">
+            </div>
+            <div id="convListItems"></div>
+          </div>
+          <div class="chat-panel" id="chatPanel">
+            <div class="empty-chat">
+              <div class="empty-chat-icon">[  ]</div>
+              <div style="font-size: 12px; margin-bottom: 6px;">> SELECT_CONVERSATION</div>
+              <div style="font-size: 11px; color: var(--text-muted);">awaiting_input...<span class="cursor"></span></div>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
   <script>
+    // Matrix Rain Effect
+    const canvas = document.getElementById('matrix-bg');
+    const ctx = canvas.getContext('2d');
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789@#$%^&*()';
+    const fontSize = 14;
+    const columns = canvas.width / fontSize;
+    const drops = Array(Math.floor(columns)).fill(1);
+
+    function drawMatrix() {
+      ctx.fillStyle = 'rgba(10, 10, 10, 0.05)';
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = '#00ff41';
+      ctx.font = fontSize + 'px monospace';
+
+      for (let i = 0; i < drops.length; i++) {
+        const char = chars[Math.floor(Math.random() * chars.length)];
+        ctx.fillText(char, i * fontSize, drops[i] * fontSize);
+        if (drops[i] * fontSize > canvas.height && Math.random() > 0.975) {
+          drops[i] = 0;
+        }
+        drops[i]++;
+      }
+    }
+    setInterval(drawMatrix, 50);
+
+    // Clock
+    function updateClock() {
+      const now = new Date();
+      document.getElementById('clockDisplay').textContent = now.toTimeString().split(' ')[0];
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
     const app = {
       currentTab: 'overview',
       leads: [],
       workers: [],
       scrapers: [],
+      conversations: [],
+      activeConversation: null,
       ws: null,
 
       async init() {
@@ -253,52 +870,62 @@
         this.connectWebSocket();
         this.renderOverview();
         this.renderScrapers();
+        document.getElementById('lastUpdate').textContent = 'LAST_UPDATE: ' + new Date().toTimeString().split(' ')[0];
       },
 
       connectWebSocket() {
-        const wsUrl = window.location.hostname === 'localhost'
-          ? 'ws://localhost:3000'
-          : 'wss://handson-empire-production.up.railway.app';
-        this.ws = new WebSocket(wsUrl);
-
-        this.ws.onopen = () => console.log('🔌 Admin connected');
-
-        this.ws.onmessage = (event) => {
-          const { event: eventType, data } = JSON.parse(event.data);
-
-          if (eventType === 'NEW_LEAD') {
-            this.leads.unshift(data);
-            this.renderOverview();
-          }
-        };
-
-        this.ws.onclose = () => {
-          console.log('🔌 Disconnected - reconnecting...');
-          setTimeout(() => this.connectWebSocket(), 3000);
-        };
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${protocol}//${window.location.host}`;
+        try {
+          this.ws = new WebSocket(wsUrl);
+          this.ws.onopen = () => console.log('[WS] CONNECTED');
+          this.ws.onmessage = (event) => {
+            const { event: eventType, data } = JSON.parse(event.data);
+            if (eventType === 'NEW_LEAD') {
+              this.leads.unshift(data);
+              this.renderOverview();
+              this.renderLeads();
+            } else if (eventType === 'SCRAPER_STARTED') {
+              this.showNotification(`[SCAN] ${data.source.toUpperCase()} starting...`, 'info');
+            } else if (eventType === 'SCRAPER_COMPLETE') {
+              this.showNotification(`[OK] ${data.source.toUpperCase()}: ${data.leads} leads ($${(data.pipeline || 0).toLocaleString()})`, 'success');
+              // Update scraper status
+              if (data.source === 'all') {
+                this.scrapers.forEach(s => { s.status = 'ok'; s.last = 'just now'; });
+                this.loadData().then(() => {
+                  this.renderOverview();
+                  this.renderLeads();
+                });
+              }
+              this.renderScrapers();
+            } else if (eventType === 'SCRAPER_ERROR') {
+              this.showNotification(`[ERR] ${data.source.toUpperCase()}: ${data.error}`, 'error');
+              this.scrapers.forEach(s => { s.status = 'ok'; s.last = 'ready'; });
+              this.renderScrapers();
+            }
+          };
+          this.ws.onclose = () => {
+            console.log('[WS] DISCONNECTED - RECONNECTING...');
+            setTimeout(() => this.connectWebSocket(), 3000);
+          };
+        } catch (e) {
+          console.log('[WS] CONNECTION_FAILED');
+        }
       },
 
       async loadData() {
         try {
-          const apiUrl = window.location.hostname === 'localhost'
-            ? 'http://localhost:3000'
-            : 'https://handson-empire-production.up.railway.app';
           const [leadsRes, workersRes] = await Promise.all([
-            fetch(`${apiUrl}/api/leads`),
-            fetch(`${apiUrl}/api/workers`)
+            fetch('/api/leads'),
+            fetch('/api/workers')
           ]);
-
           const { leads } = await leadsRes.json();
           const { workers } = await workersRes.json();
-
           this.leads = leads || [];
           this.workers = workers || [];
-
-          // Mock scrapers data
           this.scrapers = this.generateMockScrapers();
         } catch (error) {
-          console.error('Error loading data:', error);
-          // Use mock data
+          console.error('[ERR] LOAD_FAILED:', error);
           this.leads = this.generateMockLeads();
           this.workers = this.generateMockWorkers();
           this.scrapers = this.generateMockScrapers();
@@ -306,54 +933,57 @@
       },
 
       generateMockLeads() {
-        const trades = ['movers', 'roofing', 'hvac', 'storage', 'dumpster'];
+        const trades = ['assembly', 'moving', 'mounting', 'storage', 'delivery'];
         const priorities = ['CRITICAL', 'HOT', 'WARM'];
         const cities = ['Denver', 'Aurora', 'Boulder', 'Lakewood'];
-
         return Array.from({ length: 50 }, (_, i) => ({
           id: `lead-${i}`,
           trade: trades[Math.floor(Math.random() * trades.length)],
-          title: `Sample lead ${i + 1}`,
+          title: `Lead_${String(i + 1).padStart(3, '0')}`,
           city: cities[Math.floor(Math.random() * cities.length)],
           priority: priorities[Math.floor(Math.random() * priorities.length)],
           score: 50 + Math.floor(Math.random() * 50),
           revenue: 1000 + Math.floor(Math.random() * 10000),
-          source: 'Craigslist',
+          source: 'CRAIGSLIST',
           status: Math.random() > 0.7 ? 'CLAIMED' : 'NEW'
         }));
       },
 
       generateMockWorkers() {
         return [
-          { id: 'w1', name: 'Marcus T.', trades: ['movers'], rating: 4.9, jobs: 847, status: 'available', tier: 'Elite' },
-          { id: 'w2', name: 'Sarah K.', trades: ['roofing'], rating: 4.8, jobs: 312, status: 'available', tier: 'Pro' },
-          { id: 'w3', name: 'Diego R.', trades: ['electrical', 'plumbing'], rating: 4.9, jobs: 1204, status: 'on_job', tier: 'Elite' },
-          { id: 'w4', name: 'James W.', trades: ['solar'], rating: 5.0, jobs: 89, status: 'available', tier: 'Elite' },
-          { id: 'w5', name: 'Carlos F.', trades: ['movers', 'dumpster'], rating: 4.8, jobs: 2341, status: 'available', tier: 'Elite' }
+          { id: 'w1', name: 'MARCUS_T', trades: ['moving'], rating: 4.9, jobs: 847, status: 'available', tier: 'ELITE' },
+          { id: 'w2', name: 'SARAH_K', trades: ['assembly'], rating: 4.8, jobs: 312, status: 'available', tier: 'PRO' },
+          { id: 'w3', name: 'DIEGO_R', trades: ['mounting'], rating: 4.9, jobs: 1204, status: 'on_job', tier: 'ELITE' },
+          { id: 'w4', name: 'JAMES_W', trades: ['delivery'], rating: 5.0, jobs: 89, status: 'available', tier: 'ELITE' },
+          { id: 'w5', name: 'CARLOS_F', trades: ['moving', 'assembly'], rating: 4.8, jobs: 2341, status: 'available', tier: 'ELITE' }
         ];
       },
 
       generateMockScrapers() {
+        // Real scrapers mapped to API endpoints
         return [
-          { name: 'Craigslist — Denver', status: 'ok', last: '2 min ago', leads: 24 },
-          { name: 'Craigslist — Aurora', status: 'ok', last: '3 min ago', leads: 11 },
-          { name: 'Craigslist — Boulder', status: 'ok', last: '4 min ago', leads: 8 },
-          { name: 'StorageAuctions.com', status: 'ok', last: '45 min ago', leads: 18 },
-          { name: 'City Permits — Denver', status: 'ok', last: '20 min ago', leads: 14 },
-          { name: 'Reddit — r/Denver', status: 'ok', last: '8 min ago', leads: 12 },
-          { name: 'NOAA Storm Reports', status: 'ok', last: '15 min ago', leads: 3 },
-          { name: 'Eviction Court — Denver', status: 'ok', last: '30 min ago', leads: 8 },
-          { name: 'Nextdoor Mentions', status: 'warn', last: '45 min ago', leads: 5 },
-          { name: 'HOA Violations Feed', status: 'error', last: '4 hr ago', leads: 0 }
+          { name: 'CRAIGSLIST', apiName: 'craigslist', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'REDDIT', apiName: 'reddit', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'REDFIN', apiName: 'redfin', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'APARTMENTS_COM', apiName: 'apartments', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'ZILLOW', apiName: 'zillow', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'STORAGE_AUCTIONS', apiName: 'storage', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'CITY_PERMITS', apiName: 'permits', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'NOAA_STORMS', apiName: 'noaa', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'EVICTION_COURT', apiName: 'eviction', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'UNIVERSITY', apiName: 'university', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'NEXTDOOR', apiName: 'nextdoor', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'SMART_CITY', apiName: 'smartcity', status: 'ok', last: 'ready', leads: 0 },
+          { name: 'GOOGLE_MAPS', apiName: 'googlemaps', status: 'ok', last: 'ready', leads: 0 }
         ];
       },
 
+      scraperRunning: null,
+
       switchTab(tab) {
         this.currentTab = tab;
-
         document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
         document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
-
         event.target.classList.add('active');
         document.getElementById(tab).classList.add('active');
 
@@ -362,7 +992,7 @@
         if (tab === 'revenue') this.renderRevenue();
         if (tab === 'scrapers') this.renderScrapers();
         if (tab === 'analytics') this.renderAnalytics();
-        if (tab === 'customers') this.renderCustomers();
+        if (tab === 'inbox') this.renderInbox();
       },
 
       renderOverview() {
@@ -373,34 +1003,34 @@
 
         document.getElementById('kpiGrid').innerHTML = `
           <div class="kpi-card">
-            <div class="kpi-label">TOTAL LEADS</div>
+            <div class="kpi-label">TOTAL_LEADS</div>
             <div class="kpi-value">${this.leads.length}</div>
-            <div class="kpi-sub">All sources</div>
+            <div class="kpi-sub">all_sources</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">PIPELINE VALUE</div>
-            <div class="kpi-value" style="color: #22c55e;">$${pipeline.toLocaleString()}</div>
-            <div class="kpi-sub">Estimated total</div>
+            <div class="kpi-label">PIPELINE_VALUE</div>
+            <div class="kpi-value">$${pipeline.toLocaleString()}</div>
+            <div class="kpi-sub">estimated_total</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">CRITICAL LEADS</div>
-            <div class="kpi-value" style="color: #ef4444;">${critCount}</div>
-            <div class="kpi-sub">Need immediate attention</div>
+            <div class="kpi-label">CRITICAL_ALERTS</div>
+            <div class="kpi-value danger">${critCount}</div>
+            <div class="kpi-sub">immediate_action</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">ACTIVE WORKERS</div>
-            <div class="kpi-value">${this.workers.length}</div>
-            <div class="kpi-sub">${this.workers.filter(w => w.status === 'available').length} available</div>
+            <div class="kpi-label">ACTIVE_WORKERS</div>
+            <div class="kpi-value info">${this.workers.length}</div>
+            <div class="kpi-sub">${this.workers.filter(w => w.status === 'available').length}_available</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">CLAIMED TODAY</div>
-            <div class="kpi-value" style="color: #f97316;">${claimedCount}</div>
-            <div class="kpi-sub">${Math.round(claimedCount/this.leads.length*100)}% conversion</div>
+            <div class="kpi-label">CLAIMED_TODAY</div>
+            <div class="kpi-value warning">${claimedCount}</div>
+            <div class="kpi-sub">${Math.round(claimedCount/this.leads.length*100)}%_conversion</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">SCRAPERS ACTIVE</div>
-            <div class="kpi-value">${this.scrapers.filter(s => s.status === 'ok').length}</div>
-            <div class="kpi-sub">of ${this.scrapers.length} total</div>
+            <div class="kpi-label">SCRAPERS_ONLINE</div>
+            <div class="kpi-value">${this.scrapers.filter(s => s.status === 'ok').length}/${this.scrapers.length}</div>
+            <div class="kpi-sub">systems_active</div>
           </div>
         `;
 
@@ -412,35 +1042,39 @@
       renderWeeklyChart() {
         const ctx = document.getElementById('weeklyChart');
         if (!ctx) return;
+        if (ctx.chart) ctx.chart.destroy();
 
-        new Chart(ctx, {
+        ctx.chart = new Chart(ctx, {
           type: 'line',
           data: {
-            labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+            labels: ['MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN'],
             datasets: [
               {
-                label: 'Leads',
+                label: 'SCRAPED',
                 data: [14, 22, 18, 31, 28, 12, 9],
-                borderColor: '#f97316',
-                backgroundColor: 'rgba(249, 115, 22, 0.1)',
-                tension: 0.4
+                borderColor: '#00ff41',
+                backgroundColor: 'rgba(0, 255, 65, 0.1)',
+                tension: 0.4,
+                borderWidth: 2
               },
               {
-                label: 'Claimed',
+                label: 'CLAIMED',
                 data: [8, 15, 11, 20, 19, 7, 5],
-                borderColor: '#22c55e',
-                backgroundColor: 'rgba(34, 197, 94, 0.1)',
-                tension: 0.4
+                borderColor: '#00aaff',
+                backgroundColor: 'rgba(0, 170, 255, 0.1)',
+                tension: 0.4,
+                borderWidth: 2
               }
             ]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: true,
-            plugins: { legend: { labels: { color: '#94a3b8' } } },
+            plugins: {
+              legend: { labels: { color: '#00aa2a', font: { family: 'JetBrains Mono', size: 10 } } }
+            },
             scales: {
-              y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-              x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }
+              y: { ticks: { color: '#006600' }, grid: { color: '#003d00' } },
+              x: { ticks: { color: '#006600' }, grid: { color: '#003d00' } }
             }
           }
         });
@@ -449,6 +1083,7 @@
       renderTradeChart() {
         const ctx = document.getElementById('tradeChart');
         if (!ctx) return;
+        if (ctx.chart) ctx.chart.destroy();
 
         const tradeData = {};
         this.leads.forEach(l => {
@@ -456,27 +1091,27 @@
           tradeData[l.trade] += l.revenue;
         });
 
-        const trades = Object.keys(tradeData).slice(0, 8);
+        const trades = Object.keys(tradeData).slice(0, 6);
         const values = trades.map(t => tradeData[t] / 1000);
 
-        new Chart(ctx, {
+        ctx.chart = new Chart(ctx, {
           type: 'bar',
           data: {
-            labels: trades,
+            labels: trades.map(t => t.toUpperCase()),
             datasets: [{
-              label: 'Pipeline ($K)',
+              label: 'VALUE_$K',
               data: values,
-              backgroundColor: '#f97316',
-              borderRadius: 4
+              backgroundColor: '#00ff4133',
+              borderColor: '#00ff41',
+              borderWidth: 1
             }]
           },
           options: {
             responsive: true,
-            maintainAspectRatio: true,
             plugins: { legend: { display: false } },
             scales: {
-              y: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } },
-              x: { ticks: { color: '#64748b' }, grid: { color: '#1e293b' } }
+              y: { ticks: { color: '#006600' }, grid: { color: '#003d00' } },
+              x: { ticks: { color: '#006600' }, grid: { color: '#003d00' } }
             }
           }
         });
@@ -486,81 +1121,75 @@
         const critCount = this.leads.filter(l => l.priority === 'CRITICAL').length;
         const errorScrapers = this.scrapers.filter(s => s.status === 'error');
 
-        const alerts = [];
-
+        let html = '';
         if (critCount > 0) {
-          alerts.push({ type: 'error', msg: `🚨 ${critCount} CRITICAL leads need immediate attention` });
+          html += `<div style="color: var(--danger); margin-bottom: 8px;">[ALERT] ${critCount} CRITICAL_LEADS REQUIRE IMMEDIATE ACTION</div>`;
         }
-
         if (errorScrapers.length > 0) {
-          alerts.push({ type: 'warning', msg: `⚠️ ${errorScrapers[0].name} has been down for ${errorScrapers[0].last}` });
-        } else {
-          alerts.push({ type: 'success', msg: `✅ All scrapers running normally — ${this.leads.length} leads in pipeline` });
+          html += `<div style="color: var(--warning); margin-bottom: 8px;">[WARN] ${errorScrapers[0].name} OFFLINE FOR ${errorScrapers[0].last}</div>`;
         }
+        html += `<div style="color: var(--matrix-green);">[OK] ${this.scrapers.filter(s => s.status === 'ok').length} SCRAPERS OPERATIONAL | ${this.leads.length} LEADS IN PIPELINE</div>`;
 
-        document.getElementById('alerts').innerHTML = alerts.map(a => `
-          <div style="background: rgba(${a.type === 'error' ? '239,68,68' : a.type === 'warning' ? '234,179,8' : '34,197,94'}, 0.1); border: 1px solid rgba(${a.type === 'error' ? '239,68,68' : a.type === 'warning' ? '234,179,8' : '34,197,94'}, 0.25); border-radius: 8px; padding: 10px 16px; font-size: 13px; margin-bottom: 8px;">
-            ${a.msg}
-          </div>
-        `).join('');
+        document.getElementById('alerts').innerHTML = html;
       },
 
       renderLeads() {
-        const rows = this.leads.map(l => {
-          const priority = l.priority || 'WARM';
-          const revenue = l.revenue || 0;
-          const score = l.score || 50;
-          const hasLink = l.link && l.link.startsWith('http');
-          return `
-          <div class="table-row" style="cursor: ${hasLink ? 'pointer' : 'default'};" onclick="${hasLink ? `window.open('${l.link}', '_blank')` : ''}">
-            <div style="flex: 2; min-width: 0;">
-              <div style="font-size: 13px; font-weight: 600; color: ${hasLink ? '#60a5fa' : '#e2e8f0'}; margin-bottom: 2px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                ${hasLink ? '🔗 ' : ''}${l.title}
-              </div>
-              <div style="font-size: 11px; color: #64748b;">${l.city || 'Denver'} · ${l.source}</div>
-            </div>
-            <span class="badge badge-${priority.toLowerCase()}">${priority}</span>
-            <span style="font-size: 13px; font-weight: 700; color: #22c55e; min-width: 80px; text-align: right;">$${revenue.toLocaleString()}</span>
-            <span style="font-size: 12px; color: #64748b; min-width: 40px; text-align: right;">${score}</span>
-          </div>
-        `}).join('');
+        const rows = this.leads.map(l => `
+          <tr onclick="${l.link ? `window.open('${l.link}', '_blank')` : ''}" style="cursor: ${l.link ? 'pointer' : 'default'}">
+            <td style="color: ${l.link ? 'var(--info)' : 'var(--matrix-green)'};">${l.title}</td>
+            <td>${l.city}</td>
+            <td>${l.source}</td>
+            <td><span class="badge badge-${(l.priority || 'warm').toLowerCase()}">${l.priority}</span></td>
+            <td style="text-align: right; color: var(--matrix-green);">$${(l.revenue || 0).toLocaleString()}</td>
+            <td style="text-align: center;">${l.score}</td>
+          </tr>
+        `).join('');
 
         document.getElementById('leadsTable').innerHTML = `
-          <div class="table-header">
-            <span>ALL LEADS (${this.leads.length})</span>
-            <button class="btn" onclick="app.runAllScrapers()">Refresh</button>
-          </div>
-          ${rows}
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>TITLE</th>
+                <th>CITY</th>
+                <th>SOURCE</th>
+                <th>PRIORITY</th>
+                <th style="text-align: right;">VALUE</th>
+                <th style="text-align: center;">SCORE</th>
+              </tr>
+            </thead>
+            <tbody>${rows}</tbody>
+          </table>
         `;
       },
 
       renderWorkers() {
         document.getElementById('workersGrid').innerHTML = this.workers.map(w => `
-          <div style="background: #0f1623; border: 1px solid #1e293b; border-radius: 12px; padding: 16px;">
-            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 12px;">
-              <div style="width: 40px; height: 40px; border-radius: 50%; background: linear-gradient(135deg, #f97316, #ea580c); display: flex; align-items: center; justify-content: center; font-size: 18px;">
-                ${w.name.charAt(0)}
-              </div>
-              <div style="flex: 1;">
-                <div style="font-weight: 700; font-size: 15px;">${w.name}</div>
-                <div style="display: flex; align-items: center; gap: 6px; margin-top: 4px;">
-                  <span class="badge badge-${w.tier === 'Elite' ? 'hot' : 'success'}">${w.tier}</span>
-                  <span class="status-dot status-${w.status === 'available' ? 'ok' : 'warn'}"></span>
-                  <span style="font-size: 11px; color: #64748b;">${w.status === 'available' ? 'Available' : 'On Job'}</span>
+          <div class="worker-card">
+            <div class="worker-header">
+              <div class="worker-avatar">${w.name.charAt(0)}</div>
+              <div class="worker-info">
+                <h4>${w.name}</h4>
+                <div style="display: flex; gap: 8px; margin-top: 4px;">
+                  <span class="badge badge-${w.tier === 'ELITE' ? 'hot' : 'warm'}">${w.tier}</span>
+                  <span style="font-size: 10px; color: ${w.status === 'available' ? 'var(--matrix-green)' : 'var(--warning)'};">
+                    [${w.status === 'available' ? 'ONLINE' : 'BUSY'}]
+                  </span>
                 </div>
               </div>
             </div>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 10px;">
-              <div style="background: #0a0f1a; border-radius: 6px; padding: 6px 8px;">
-                <div style="font-size: 9px; color: #475569; font-weight: 600;">RATING</div>
-                <div style="font-size: 13px; font-weight: 700; color: #fbbf24;">${'★'.repeat(Math.round(w.rating))} ${w.rating}</div>
+            <div class="worker-stats">
+              <div class="worker-stat">
+                <div class="worker-stat-label">RATING</div>
+                <div class="worker-stat-value">${w.rating}/5.0</div>
               </div>
-              <div style="background: #0a0f1a; border-radius: 6px; padding: 6px 8px;">
-                <div style="font-size: 9px; color: #475569; font-weight: 600;">JOBS</div>
-                <div style="font-size: 13px; font-weight: 700;">${w.jobs.toLocaleString()}</div>
+              <div class="worker-stat">
+                <div class="worker-stat-label">JOBS</div>
+                <div class="worker-stat-value">${w.jobs.toLocaleString()}</div>
               </div>
             </div>
-            <div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">${w.trades.join(', ')}</div>
+            <div style="margin-top: 10px; font-size: 11px; color: var(--text-muted);">
+              TRADES: ${w.trades.join(', ').toUpperCase()}
+            </div>
           </div>
         `).join('');
       },
@@ -568,62 +1197,67 @@
       renderRevenue() {
         document.getElementById('revenueKpis').innerHTML = `
           <div class="kpi-card">
-            <div class="kpi-label">GMV (30d)</div>
-            <div class="kpi-value" style="color: #22c55e;">$84,200</div>
+            <div class="kpi-label">GMV_30D</div>
+            <div class="kpi-value">$84,200</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">PLATFORM FEES (8%)</div>
-            <div class="kpi-value" style="color: #f97316;">$6,736</div>
+            <div class="kpi-label">PLATFORM_FEES</div>
+            <div class="kpi-value warning">$6,736</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">SUBSCRIPTION MRR</div>
-            <div class="kpi-value" style="color: #3b82f6;">$4,890</div>
+            <div class="kpi-label">MRR</div>
+            <div class="kpi-value info">$4,890</div>
           </div>
           <div class="kpi-card">
-            <div class="kpi-label">LEAD CREDITS</div>
-            <div class="kpi-value" style="color: #a855f7;">$1,240</div>
+            <div class="kpi-label">LEAD_CREDITS</div>
+            <div class="kpi-value">$1,240</div>
           </div>
         `;
 
         const transactions = [
-          { type: 'completion', label: 'Moving Job — Marcus T.', amount: '+$224.00', color: '#22c55e' },
-          { type: 'subscription', label: 'Elite Plan — Diego R.', amount: '+$99.00', color: '#3b82f6' },
-          { type: 'completion', label: 'Solar Install — James W.', amount: '+$2,000.00', color: '#22c55e' },
-          { type: 'credit', label: 'Lead Credit — Carlos F.', amount: '+$25.00', color: '#a855f7' },
-          { type: 'completion', label: 'Roof Repair — Sarah K.', amount: '+$680.00', color: '#22c55e' }
+          { type: 'COMPLETION', label: 'MOVING_JOB // MARCUS_T', amount: '+$224.00' },
+          { type: 'SUBSCRIPTION', label: 'ELITE_PLAN // DIEGO_R', amount: '+$99.00' },
+          { type: 'COMPLETION', label: 'ASSEMBLY_JOB // JAMES_W', amount: '+$2,000.00' },
+          { type: 'CREDIT', label: 'LEAD_CREDIT // CARLOS_F', amount: '+$25.00' }
         ];
 
         document.getElementById('transactionsTable').innerHTML = `
-          <div class="table-header">RECENT TRANSACTIONS</div>
-          ${transactions.map(tx => `
-            <div class="table-row">
-              <div style="flex: 1;">
-                <span class="badge" style="background: ${tx.color}20; color: ${tx.color}; border: 1px solid ${tx.color}40; margin-right: 8px;">${tx.type.toUpperCase()}</span>
-                <span style="font-size: 13px; color: #e2e8f0;">${tx.label}</span>
-              </div>
-              <span style="font-size: 14px; font-weight: 700; color: ${tx.color};">${tx.amount}</span>
-            </div>
-          `).join('')}
+          <table class="data-table">
+            <thead><tr><th>TYPE</th><th>DESCRIPTION</th><th style="text-align: right;">AMOUNT</th></tr></thead>
+            <tbody>
+              ${transactions.map(t => `
+                <tr>
+                  <td><span class="badge badge-success">${t.type}</span></td>
+                  <td>${t.label}</td>
+                  <td style="text-align: right; color: var(--matrix-green);">${t.amount}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         `;
       },
 
       renderScrapers() {
-        document.getElementById('scraperCount').textContent = this.scrapers.length;
-
-        const rows = this.scrapers.map(s => `
-          <div class="table-row">
-            <span class="status-dot status-${s.status} ${s.status === 'ok' ? 'pulse' : ''}"></span>
-            <span style="flex: 1; font-size: 13px; color: #e2e8f0;">${s.name}</span>
-            <span style="font-size: 11px; color: #475569;">${s.last}</span>
-            <span style="font-size: 11px; color: #64748b; width: 60px; text-align: right;">${s.leads} leads</span>
-            <button class="btn" style="padding: 4px 10px; font-size: 11px;" onclick="app.runScraper('${s.name}')">Run</button>
-          </div>
-        `).join('');
+        document.getElementById('scraperCount').textContent = this.scrapers.filter(s => s.status === 'ok').length;
 
         document.getElementById('scrapersTable').innerHTML = `
-          <div style="background: #0f1623; border: 1px solid #1e293b; border-radius: 12px; overflow: hidden;">
-            ${rows}
-          </div>
+          <table class="data-table">
+            <thead><tr><th>STATUS</th><th>SCRAPER</th><th>LAST_RUN</th><th style="text-align: right;">LEADS</th><th></th></tr></thead>
+            <tbody>
+              ${this.scrapers.map(s => `
+                <tr>
+                  <td>
+                    <span class="status-dot ${s.status === 'ok' ? 'online' : s.status === 'warn' ? 'warning' : 'error'}"></span>
+                    ${s.status.toUpperCase()}
+                  </td>
+                  <td>${s.name}</td>
+                  <td style="color: var(--text-muted);">${s.last}</td>
+                  <td style="text-align: right;">${s.leads}</td>
+                  <td><button class="btn" onclick="app.runScraper('${s.name}')">[RUN]</button></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
         `;
       },
 
@@ -635,100 +1269,389 @@
         const bookedCount = Math.round(claimedCount * 0.7);
 
         const funnel = [
-          { label: 'Scraped', count: totalLeads, pct: 100 },
-          { label: 'Critical Priority', count: critCount, pct: Math.round(critCount/totalLeads*100) },
-          { label: 'With Phone', count: phoneCount, pct: Math.round(phoneCount/totalLeads*100) },
-          { label: 'Claimed', count: claimedCount, pct: Math.round(claimedCount/totalLeads*100) },
-          { label: 'Booked', count: bookedCount, pct: Math.round(bookedCount/totalLeads*100) }
+          { label: 'SCRAPED', count: totalLeads, pct: 100 },
+          { label: 'CRITICAL', count: critCount, pct: Math.round(critCount/totalLeads*100) },
+          { label: 'WITH_PHONE', count: phoneCount, pct: Math.round(phoneCount/totalLeads*100) },
+          { label: 'CLAIMED', count: claimedCount, pct: Math.round(claimedCount/totalLeads*100) },
+          { label: 'BOOKED', count: bookedCount, pct: Math.round(bookedCount/totalLeads*100) }
         ];
 
         document.getElementById('funnelChart').innerHTML = funnel.map(f => `
-          <div style="margin-bottom: 10px;">
+          <div style="margin-bottom: 12px;">
             <div style="display: flex; justify-content: space-between; margin-bottom: 4px;">
-              <span style="font-size: 13px; color: #e2e8f0;">${f.label}</span>
-              <span style="font-size: 13px; font-weight: 700; color: #f97316;">${f.count} (${f.pct}%)</span>
+              <span style="font-size: 11px; color: var(--text-dim);">${f.label}</span>
+              <span style="font-size: 11px; color: var(--matrix-green);">${f.count} (${f.pct}%)</span>
             </div>
-            <div style="height: 6px; background: #1e293b; border-radius: 3px;">
-              <div style="width: ${f.pct}%; height: 100%; background: #f97316; border-radius: 3px;"></div>
+            <div style="height: 4px; background: var(--matrix-dark);">
+              <div style="width: ${f.pct}%; height: 100%; background: var(--matrix-green);"></div>
             </div>
           </div>
         `).join('');
 
         const comparison = [
-          { name: 'Thumbtack', rating: '2.3★', model: 'Sells to 6', cost: '$15-$150/lead' },
-          { name: 'Angi', rating: '1.9★', model: 'Sells to 4-8', cost: '$300+/mo' },
-          { name: 'TaskRabbit', rating: '3.8★', model: 'Gig marketplace', cost: '15-30% cut' },
-          { name: 'HandsOn', rating: '4.9★', model: '1 lead = 1 buyer', cost: '8% on completion', highlight: true }
+          { name: 'THUMBTACK', rating: '2.3', model: 'SELLS_TO_6', cost: '$15-150/LEAD' },
+          { name: 'ANGI', rating: '1.9', model: 'SELLS_TO_8', cost: '$300+/MO' },
+          { name: 'TASKRABBIT', rating: '3.8', model: 'GIG_MODEL', cost: '15-30%_CUT' },
+          { name: 'HANDSON', rating: '4.9', model: '1:1_EXCLUSIVE', cost: '8%_ON_WIN', highlight: true }
         ];
 
-        document.getElementById('comparisonTable').innerHTML = comparison.map(p => `
-          <div style="background: ${p.highlight ? 'rgba(249,115,22,0.08)' : '#0f1623'}; border: 1px solid ${p.highlight ? 'rgba(249,115,22,0.25)' : '#1e293b'}; border-radius: 8px; padding: 10px 16px; margin-bottom: 6px; display: flex; gap: 16px; align-items: center;">
-            <span style="width: 90px; font-size: 13px; font-weight: ${p.highlight ? 700 : 400}; color: ${p.highlight ? '#f97316' : '#e2e8f0'};">${p.name}</span>
-            <span style="width: 50px; font-size: 13px; color: ${p.highlight ? '#fbbf24' : '#94a3b8'};">${p.rating}</span>
-            <span style="flex: 1; font-size: 12px; color: #94a3b8;">${p.model}</span>
-            <span style="font-size: 12px; color: ${p.highlight ? '#22c55e' : '#64748b'};">${p.cost}</span>
-          </div>
-        `).join('');
+        document.getElementById('comparisonTable').innerHTML = `
+          <table class="data-table">
+            <thead><tr><th>PLATFORM</th><th>RATING</th><th>MODEL</th><th>COST</th></tr></thead>
+            <tbody>
+              ${comparison.map(p => `
+                <tr style="${p.highlight ? 'background: rgba(0, 255, 65, 0.05);' : ''}">
+                  <td style="${p.highlight ? 'color: var(--matrix-green); font-weight: 700;' : ''}">${p.name}</td>
+                  <td>${p.rating}</td>
+                  <td>${p.model}</td>
+                  <td style="${p.highlight ? 'color: var(--matrix-green);' : ''}">${p.cost}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        `;
       },
 
-      renderCustomers() {
-        document.getElementById('customerKpis').innerHTML = `
-          <div class="kpi-card">
-            <div class="kpi-label">TOTAL CUSTOMERS</div>
-            <div class="kpi-value">342</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">ACTIVE (30d)</div>
-            <div class="kpi-value" style="color: #22c55e;">89</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">AVG LTV</div>
-            <div class="kpi-value" style="color: #f97316;">$1,840</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">NPS SCORE</div>
-            <div class="kpi-value" style="color: #3b82f6;">72</div>
-            <div class="kpi-sub">Excellent</div>
-          </div>
-        `;
+      // ═══ INBOX ═══
+      async loadInbox() {
+        try {
+          const res = await fetch('/api/comms');
+          const data = await res.json();
+          if (data.success) {
+            this.conversations = data.conversations || [];
+            this.updateUnreadBadge();
+          }
+        } catch (err) {
+          console.error('[ERR] INBOX_LOAD_FAILED');
+          this.conversations = this.generateMockConversations();
+        }
+      },
 
-        const customers = [
-          { name: 'Jennifer M.', city: 'Denver', jobs: 4, spend: 9200, status: 'Active' },
-          { name: 'Robert K.', city: 'Aurora', jobs: 2, spend: 3800, status: 'Active' },
-          { name: 'Maria S.', city: 'Boulder', jobs: 6, spend: 15400, status: 'Active' },
-          { name: 'David L.', city: 'Lakewood', jobs: 1, spend: 450, status: 'New' }
+      generateMockConversations() {
+        return [
+          {
+            phone: '+14256289888',
+            name: 'SUSIE',
+            lastMessage: { channel: 'sms', direction: 'outbound', content: 'Confirming appointment for TOMORROW at 14:00...', created_at: new Date().toISOString() },
+            messages: [
+              { channel: 'call', direction: 'outbound', content: 'Call with SARAH - 18 shelving units confirmed', call_agent: 'SARAH', call_duration: 245, call_outcome: 'BOOKING_CONFIRMED', created_at: new Date(Date.now() - 3600000).toISOString() },
+              { channel: 'sms', direction: 'outbound', content: 'Confirming appointment for TOMORROW at 14:00 for shelving assembly (18 units).', created_at: new Date().toISOString() }
+            ]
+          },
+          {
+            phone: '+17205551234',
+            name: 'JOHN_SMITH',
+            lastMessage: { channel: 'call', direction: 'outbound', content: 'IKEA MALM assembly discussion', call_outcome: 'FOLLOW_UP_SCHEDULED', created_at: new Date(Date.now() - 7200000).toISOString() },
+            messages: [
+              { channel: 'call', direction: 'outbound', content: 'Discussed MALM dresser assembly. Follow up scheduled.', call_agent: 'EMMA', call_duration: 180, call_outcome: 'FOLLOW_UP_SCHEDULED', created_at: new Date(Date.now() - 7200000).toISOString() }
+            ]
+          },
+          {
+            phone: '+13035559999',
+            name: 'MIKE_JOHNSON',
+            lastMessage: { channel: 'sms', direction: 'inbound', content: 'What time tomorrow?', created_at: new Date(Date.now() - 1800000).toISOString(), read_at: null },
+            messages: [
+              { channel: 'sms', direction: 'outbound', content: 'Confirming TV mounting for Saturday.', created_at: new Date(Date.now() - 86400000).toISOString() },
+              { channel: 'sms', direction: 'inbound', content: 'What time tomorrow?', created_at: new Date(Date.now() - 1800000).toISOString(), read_at: null }
+            ]
+          }
         ];
+      },
 
-        document.getElementById('customersTable').innerHTML = `
-          <div class="table-header">CUSTOMER DATABASE</div>
-          ${customers.map(c => `
-            <div class="table-row">
-              <div style="flex: 1;">
-                <div style="font-size: 14px; font-weight: 600; color: #e2e8f0;">${c.name}</div>
-                <div style="font-size: 11px; color: #64748b;">${c.city}</div>
+      updateUnreadBadge() {
+        let unread = 0;
+        this.conversations.forEach(c => {
+          c.messages?.forEach(m => { if (m.direction === 'inbound' && !m.read_at) unread++; });
+        });
+        const badge = document.getElementById('inboxBadge');
+        if (badge) {
+          badge.textContent = unread;
+          badge.style.display = unread > 0 ? 'inline' : 'none';
+        }
+      },
+
+      async renderInbox() {
+        if (this.conversations.length === 0) await this.loadInbox();
+        this.renderConversationList();
+      },
+
+      renderConversationList(filter = '') {
+        const container = document.getElementById('convListItems');
+        const filtered = this.conversations.filter(c =>
+          !filter || (c.name || '').toLowerCase().includes(filter.toLowerCase()) || c.phone.includes(filter)
+        );
+
+        container.innerHTML = filtered.map(conv => {
+          const hasUnread = conv.messages?.some(m => m.direction === 'inbound' && !m.read_at);
+          const lastMsg = conv.lastMessage || conv.messages?.[conv.messages.length - 1];
+          const icon = lastMsg?.channel === 'call' ? '[CALL]' : '[SMS]';
+          const timeAgo = this.timeAgo(lastMsg?.created_at);
+          const isActive = this.activeConversation?.phone === conv.phone;
+
+          return `
+            <div class="conversation-item ${isActive ? 'active' : ''} ${hasUnread ? 'unread' : ''}"
+                 onclick="app.selectConversation('${conv.phone}')">
+              <div class="conv-header">
+                <span class="conv-name">${conv.name || this.formatPhone(conv.phone)}</span>
+                <span class="conv-time">${timeAgo}</span>
               </div>
-              <div style="text-align: center; min-width: 50px;">
-                <div style="font-size: 13px; font-weight: 700;">${c.jobs}</div>
-                <div style="font-size: 10px; color: #64748b;">jobs</div>
+              <div class="conv-preview">
+                <span style="color: var(--text-muted);">${icon}</span> ${lastMsg?.content?.substring(0, 40) || 'NO_DATA'}...
               </div>
-              <div style="text-align: center; min-width: 80px;">
-                <div style="font-size: 13px; font-weight: 700; color: #22c55e;">$${c.spend.toLocaleString()}</div>
-                <div style="font-size: 10px; color: #64748b;">spend</div>
-              </div>
-              <span class="badge badge-${c.status === 'Active' ? 'success' : 'hot'}">${c.status}</span>
             </div>
-          `).join('')}
+          `;
+        }).join('');
+      },
+
+      filterConversations(query) { this.renderConversationList(query); },
+
+      selectConversation(phone) {
+        this.activeConversation = this.conversations.find(c => c.phone === phone);
+        this.renderConversationList();
+        this.renderChatPanel();
+      },
+
+      renderChatPanel() {
+        const panel = document.getElementById('chatPanel');
+        const conv = this.activeConversation;
+
+        if (!conv) {
+          panel.innerHTML = `
+            <div class="empty-chat">
+              <div class="empty-chat-icon">[  ]</div>
+              <div style="font-size: 12px; margin-bottom: 6px;">> SELECT_CONVERSATION</div>
+              <div style="font-size: 11px; color: var(--text-muted);">awaiting_input...<span class="cursor"></span></div>
+            </div>
+          `;
+          return;
+        }
+
+        const messagesHtml = (conv.messages || []).map(msg => {
+          if (msg.channel === 'call') return this.renderCallMessage(msg);
+          return this.renderTextMessage(msg);
+        }).join('');
+
+        panel.innerHTML = `
+          <div class="chat-header">
+            <div class="chat-customer">
+              <h3>${conv.name || 'UNKNOWN'}</h3>
+              <p>${this.formatPhone(conv.phone)}</p>
+            </div>
+            <div class="chat-actions">
+              <button class="btn" onclick="app.triggerAICall('${conv.phone}')">[AI_CALL]</button>
+              <button class="btn" onclick="app.viewCustomerProfile('${conv.phone}')">[PROFILE]</button>
+            </div>
+          </div>
+          <div class="chat-messages" id="chatMessages">${messagesHtml}</div>
+          <div class="chat-input">
+            <input type="text" id="messageInput" placeholder="> type_message..." onkeypress="if(event.key==='Enter') app.sendMessage()">
+            <button class="btn" onclick="app.sendMessage()">[SEND]</button>
+          </div>
         `;
+
+        const messagesDiv = document.getElementById('chatMessages');
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+      },
+
+      renderTextMessage(msg) {
+        const time = new Date(msg.created_at).toTimeString().split(' ')[0];
+        return `
+          <div class="message ${msg.direction}">
+            ${msg.content}
+            <div class="message-meta">${msg.channel.toUpperCase()} // ${time}</div>
+          </div>
+        `;
+      },
+
+      renderCallMessage(msg) {
+        const time = new Date(msg.created_at).toTimeString().split(' ')[0];
+        const duration = msg.call_duration ? Math.floor(msg.call_duration / 60) + ':' + String(msg.call_duration % 60).padStart(2, '0') : '--:--';
+        const outcomeClass = msg.call_outcome === 'BOOKING_CONFIRMED' ? 'booked' : 'followup';
+
+        return `
+          <div class="call-message ${msg.direction}">
+            <div class="call-header">
+              <span>[CALL]</span>
+              <span>${msg.call_agent || 'AGENT'} // ${duration} // ${time}</span>
+            </div>
+            ${msg.content ? `<div class="call-transcript">${msg.content}</div>` : ''}
+            <span class="call-outcome ${outcomeClass}">${msg.call_outcome?.replace(/_/g, '_') || 'COMPLETED'}</span>
+          </div>
+        `;
+      },
+
+      async sendMessage() {
+        const input = document.getElementById('messageInput');
+        const text = input.value.trim();
+        if (!text || !this.activeConversation) return;
+        input.value = '';
+
+        const newMsg = { channel: 'sms', direction: 'outbound', content: text, status: 'sending', created_at: new Date().toISOString() };
+        this.activeConversation.messages.push(newMsg);
+        this.renderChatPanel();
+
+        try {
+          const res = await fetch('/api/comms/send', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ to: this.activeConversation.phone, body: text, customerName: this.activeConversation.name })
+          });
+          const data = await res.json();
+          newMsg.status = data.success ? 'delivered' : 'failed';
+          if (!data.success) alert('[ERR] ' + data.error);
+        } catch (err) {
+          newMsg.status = 'failed';
+        }
+        this.renderChatPanel();
+      },
+
+      async triggerAICall(phone) {
+        const conv = this.conversations.find(c => c.phone === phone);
+        const description = prompt('[INPUT] CALL_OBJECTIVE:', 'Follow up on previous conversation');
+        if (!description) return;
+
+        try {
+          const res = await fetch('/api/router/route', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ phone, description, name: conv?.name || 'CUSTOMER', dryRun: false })
+          });
+          const data = await res.json();
+          alert(data.success ? `[OK] AI_CALL_INITIATED // AGENT: ${data.agent.name}` : '[ERR] ' + data.error);
+        } catch (err) {
+          alert('[ERR] ' + err.message);
+        }
+      },
+
+      viewCustomerProfile(phone) { alert('[INFO] PROFILE_MODULE // COMING_SOON'); },
+
+      formatPhone(phone) {
+        if (!phone) return '';
+        const cleaned = phone.replace(/\D/g, '');
+        if (cleaned.length === 11 && cleaned[0] === '1') {
+          return `+1-${cleaned.slice(1,4)}-${cleaned.slice(4,7)}-${cleaned.slice(7)}`;
+        }
+        return phone;
+      },
+
+      timeAgo(dateStr) {
+        if (!dateStr) return '';
+        const diff = Math.floor((new Date() - new Date(dateStr)) / 1000);
+        if (diff < 60) return 'NOW';
+        if (diff < 3600) return Math.floor(diff / 60) + 'M';
+        if (diff < 86400) return Math.floor(diff / 3600) + 'H';
+        return Math.floor(diff / 86400) + 'D';
       },
 
       async runScraper(name) {
-        alert(`Running scraper: ${name}`);
-        // In production: POST to /api/scrape
+        // Find the scraper by display name
+        const scraper = this.scrapers.find(s => s.name === name);
+        if (!scraper) {
+          this.showNotification(`Unknown scraper: ${name}`, 'error');
+          return;
+        }
+
+        // Update UI to show running
+        scraper.status = 'running';
+        scraper.last = 'running...';
+        this.renderScrapers();
+        this.showNotification(`[EXEC] RUNNING: ${name}`, 'info');
+
+        try {
+          const response = await fetch(`${this.apiBase}/api/scrape/${scraper.apiName}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ city: 'denver', trade: 'movers' })
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            scraper.status = 'ok';
+            scraper.last = 'just now';
+            scraper.leads = data.leads || 0;
+            this.showNotification(`[OK] ${name}: ${data.leads} leads found ($${(data.pipeline || 0).toLocaleString()})`, 'success');
+
+            // Refresh leads list
+            await this.loadData();
+            this.renderOverview();
+            this.renderLeads();
+          } else {
+            scraper.status = 'error';
+            scraper.last = 'failed';
+            this.showNotification(`[ERR] ${name}: ${data.error}`, 'error');
+          }
+        } catch (error) {
+          scraper.status = 'error';
+          scraper.last = 'failed';
+          this.showNotification(`[ERR] ${name}: ${error.message}`, 'error');
+        }
+
+        this.renderScrapers();
       },
 
       async runAllScrapers() {
-        alert('Running all 37 scrapers... This will take a few minutes.');
-        // In production: POST to /api/scrape with source=all
+        this.showNotification('[EXEC] INITIATING_FULL_SCAN... (45+ sources)', 'info');
+
+        // Update all scrapers to running state
+        this.scrapers.forEach(s => {
+          s.status = 'running';
+          s.last = 'queued...';
+        });
+        this.renderScrapers();
+
+        try {
+          const response = await fetch(`${this.apiBase}/api/scrape/all`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' }
+          });
+
+          const data = await response.json();
+
+          if (data.success) {
+            this.showNotification('[OK] Full scan initiated - results will stream in via WebSocket', 'success');
+          } else {
+            this.showNotification(`[ERR] ${data.message || data.error}`, 'error');
+            this.scrapers.forEach(s => { s.status = 'ok'; s.last = 'ready'; });
+          }
+        } catch (error) {
+          this.showNotification(`[ERR] ${error.message}`, 'error');
+          this.scrapers.forEach(s => { s.status = 'ok'; s.last = 'ready'; });
+        }
+
+        this.renderScrapers();
+      },
+
+      showNotification(message, type = 'info') {
+        const colors = {
+          info: 'var(--primary)',
+          success: 'var(--success)',
+          error: 'var(--danger)',
+          warning: 'var(--warning)'
+        };
+
+        const notification = document.createElement('div');
+        notification.style.cssText = `
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: rgba(0, 0, 0, 0.95);
+          border: 1px solid ${colors[type]};
+          color: ${colors[type]};
+          padding: 12px 20px;
+          font-family: 'JetBrains Mono', monospace;
+          font-size: 12px;
+          z-index: 10000;
+          animation: slideIn 0.3s ease;
+          max-width: 400px;
+        `;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+
+        setTimeout(() => {
+          notification.style.opacity = '0';
+          setTimeout(() => notification.remove(), 300);
+        }, 4000);
       }
     };
 
