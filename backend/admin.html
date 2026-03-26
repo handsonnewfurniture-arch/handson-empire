@@ -6,6 +6,13 @@
   <title>HANDSON_EMPIRE // COMMAND_CENTER</title>
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <!-- Leaflet.js for interactive maps -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet MarkerCluster for grouping pins -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.css" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet.markercluster@1.4.1/dist/MarkerCluster.Default.css" />
+  <script src="https://unpkg.com/leaflet.markercluster@1.4.1/dist/leaflet.markercluster.js"></script>
   <style>
     :root {
       --matrix-green: #00ff41;
@@ -326,6 +333,117 @@
       color: var(--matrix-green);
       border-color: var(--matrix-green);
       background: rgba(0, 255, 65, 0.1);
+    }
+    .badge-cold {
+      color: var(--info);
+      border-color: var(--info);
+      background: rgba(0, 170, 255, 0.1);
+    }
+
+    /* Map Styles */
+    #leadMap {
+      height: 400px;
+      width: 100%;
+      background: var(--terminal-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+    }
+    .leaflet-container {
+      background: #0a0a0a !important;
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .leaflet-popup-content-wrapper {
+      background: rgba(0, 0, 0, 0.95) !important;
+      border: 1px solid var(--matrix-green) !important;
+      border-radius: 4px !important;
+      color: var(--matrix-green) !important;
+    }
+    .leaflet-popup-tip {
+      background: var(--matrix-green) !important;
+    }
+    .leaflet-popup-content {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      margin: 10px 12px;
+    }
+    .map-controls {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .map-filter {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      color: var(--matrix-green);
+      padding: 8px 12px;
+      font-family: inherit;
+      font-size: 11px;
+      cursor: pointer;
+    }
+    .map-filter:focus {
+      outline: none;
+      border-color: var(--matrix-green);
+    }
+    .map-filter option {
+      background: #0a0a0a;
+      color: var(--matrix-green);
+    }
+    .map-stats {
+      display: flex;
+      gap: 20px;
+      margin-left: auto;
+      font-size: 11px;
+      color: var(--text-muted);
+    }
+    .map-stat-value {
+      color: var(--matrix-green);
+      font-weight: bold;
+    }
+    .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
+      background: rgba(0, 255, 65, 0.3) !important;
+    }
+    .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
+      background: rgba(0, 255, 65, 0.6) !important;
+      color: #000 !important;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: bold;
+    }
+    .lead-pin-critical { filter: hue-rotate(280deg) brightness(1.5); }
+    .lead-pin-hot { filter: hue-rotate(330deg) brightness(1.3); }
+    .lead-pin-warm { filter: hue-rotate(80deg) brightness(1.2); }
+    .lead-pin-cold { filter: hue-rotate(180deg) brightness(1.2); }
+    .view-toggle {
+      display: flex;
+      gap: 0;
+    }
+    .view-toggle .btn {
+      border-radius: 0;
+    }
+    .view-toggle .btn:first-child {
+      border-radius: 4px 0 0 4px;
+    }
+    .view-toggle .btn:last-child {
+      border-radius: 0 4px 4px 0;
+    }
+    .view-toggle .btn.active {
+      background: var(--matrix-green);
+      color: var(--terminal-bg);
+    }
+    .lead-popup-title {
+      font-weight: bold;
+      margin-bottom: 6px;
+      color: var(--matrix-green);
+    }
+    .lead-popup-detail {
+      color: var(--text-muted);
+      margin: 2px 0;
+    }
+    .lead-popup-value {
+      color: var(--matrix-green);
+      font-size: 14px;
+      margin-top: 6px;
     }
 
     /* Buttons */
@@ -729,10 +847,63 @@
 
       <!-- LEADS TAB -->
       <div id="leads" class="tab-content">
+        <!-- Map Section -->
         <div class="terminal-window">
           <div class="terminal-header">
+            <span class="terminal-title">LEAD_MAP // US_COVERAGE</span>
+            <div class="view-toggle">
+              <button class="btn active" onclick="app.setMapView('map')" id="viewMapBtn">[ MAP ]</button>
+              <button class="btn" onclick="app.setMapView('table')" id="viewTableBtn">[ TABLE ]</button>
+            </div>
+          </div>
+          <div class="terminal-body">
+            <!-- Filter Controls -->
+            <div class="map-controls">
+              <select class="map-filter" id="filterPriority" onchange="app.filterLeads()">
+                <option value="">ALL_PRIORITIES</option>
+                <option value="CRITICAL">CRITICAL</option>
+                <option value="HOT">HOT</option>
+                <option value="WARM">WARM</option>
+                <option value="COLD">COLD</option>
+              </select>
+              <select class="map-filter" id="filterSource" onchange="app.filterLeads()">
+                <option value="">ALL_SOURCES</option>
+              </select>
+              <select class="map-filter" id="filterCity" onchange="app.filterLeads()">
+                <option value="">ALL_CITIES</option>
+              </select>
+              <select class="map-filter" id="filterTrade" onchange="app.filterLeads()">
+                <option value="">ALL_TRADES</option>
+              </select>
+              <select class="map-filter" id="sortBy" onchange="app.sortLeads()">
+                <option value="date">SORT: DATE</option>
+                <option value="value">SORT: VALUE</option>
+                <option value="score">SORT: SCORE</option>
+                <option value="priority">SORT: PRIORITY</option>
+              </select>
+              <button class="btn" onclick="app.runAllScrapers()">[ SCAN ]</button>
+              <div class="map-stats">
+                <span>SHOWING: <span class="map-stat-value" id="showingCount">0</span></span>
+                <span>PIPELINE: <span class="map-stat-value" id="pipelineValue">$0</span></span>
+              </div>
+            </div>
+            <!-- Map Container -->
+            <div id="leadMap"></div>
+            <!-- Legend -->
+            <div style="display: flex; gap: 20px; margin-top: 12px; font-size: 10px;">
+              <span><span style="color: #ff0040;">●</span> CRITICAL</span>
+              <span><span style="color: #ffaa00;">●</span> HOT</span>
+              <span><span style="color: #00ff41;">●</span> WARM</span>
+              <span><span style="color: #00aaff;">●</span> COLD</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Table Section -->
+        <div class="terminal-window" style="margin-top: 16px;">
+          <div class="terminal-header">
             <span class="terminal-title">LEAD_DATABASE</span>
-            <button class="btn" onclick="app.runAllScrapers()">[ REFRESH ]</button>
+            <span style="color: var(--text-muted); font-size: 11px;" id="leadTableCount">0 RECORDS</span>
           </div>
           <div class="terminal-body" id="leadsTable"></div>
         </div>
@@ -856,21 +1027,245 @@
     setInterval(updateClock, 1000);
     updateClock();
 
+    // US City Coordinates for map pins
+    const CITY_COORDS = {
+      // Colorado
+      'denver': [39.7392, -104.9903], 'aurora': [39.7294, -104.8319], 'lakewood': [39.7047, -105.0814],
+      'boulder': [40.0150, -105.2705], 'arvada': [39.8028, -105.0875], 'westminster': [39.8367, -105.0372],
+      'thornton': [39.8680, -104.9719], 'centennial': [39.5807, -104.8772], 'littleton': [39.6133, -105.0166],
+      'englewood': [39.6478, -104.9878], 'parker': [39.5186, -104.7614], 'castle rock': [39.3722, -104.8561],
+      'highlands ranch': [39.5419, -104.9708], 'broomfield': [39.9206, -105.0867], 'longmont': [40.1672, -105.1019],
+      'fort collins': [40.5853, -105.0844], 'pueblo': [38.2545, -104.6091], 'greeley': [40.4233, -104.7091],
+      'grand junction': [39.0639, -108.5506], 'colorado springs': [38.8339, -104.8214],
+      // Major US cities
+      'new york': [40.7128, -74.0060], 'los angeles': [34.0522, -118.2437], 'chicago': [41.8781, -87.6298],
+      'houston': [29.7604, -95.3698], 'phoenix': [33.4484, -112.0740], 'philadelphia': [39.9526, -75.1652],
+      'san antonio': [29.4241, -98.4936], 'san diego': [32.7157, -117.1611], 'dallas': [32.7767, -96.7970],
+      'san jose': [37.3382, -121.8863], 'austin': [30.2672, -97.7431], 'jacksonville': [30.3322, -81.6557],
+      'san francisco': [37.7749, -122.4194], 'seattle': [47.6062, -122.3321], 'boston': [42.3601, -71.0589],
+      'atlanta': [33.7490, -84.3880], 'miami': [25.7617, -80.1918], 'portland': [45.5152, -122.6784],
+      'las vegas': [36.1699, -115.1398], 'detroit': [42.3314, -83.0458], 'minneapolis': [44.9778, -93.2650],
+      'salt lake city': [40.7608, -111.8910], 'kansas city': [39.0997, -94.5786], 'nashville': [36.1627, -86.7816],
+      'default': [39.8283, -98.5795] // Center of US
+    };
+
     const app = {
       currentTab: 'overview',
       leads: [],
+      filteredLeads: [],
       workers: [],
       scrapers: [],
       conversations: [],
       activeConversation: null,
       ws: null,
+      map: null,
+      markerCluster: null,
+      markers: [],
+      mapView: 'map',
 
       async init() {
         await this.loadData();
         this.connectWebSocket();
+        this.initMap();
         this.renderOverview();
         this.renderScrapers();
         document.getElementById('lastUpdate').textContent = 'LAST_UPDATE: ' + new Date().toTimeString().split(' ')[0];
+      },
+
+      initMap() {
+        // Initialize Leaflet map centered on US
+        this.map = L.map('leadMap', {
+          center: [39.8283, -98.5795],
+          zoom: 4,
+          zoomControl: true,
+          scrollWheelZoom: true
+        });
+
+        // Dark theme map tiles
+        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; OpenStreetMap &copy; CARTO',
+          subdomains: 'abcd',
+          maxZoom: 19
+        }).addTo(this.map);
+
+        // Initialize marker cluster group
+        this.markerCluster = L.markerClusterGroup({
+          maxClusterRadius: 50,
+          spiderfyOnMaxZoom: true,
+          showCoverageOnHover: false,
+          iconCreateFunction: (cluster) => {
+            const count = cluster.getChildCount();
+            let size = 'small';
+            if (count > 10) size = 'medium';
+            if (count > 50) size = 'large';
+            return L.divIcon({
+              html: `<div>${count}</div>`,
+              className: `marker-cluster marker-cluster-${size}`,
+              iconSize: L.point(40, 40)
+            });
+          }
+        });
+
+        this.map.addLayer(this.markerCluster);
+      },
+
+      getCityCoords(city) {
+        if (!city) return CITY_COORDS['default'];
+        const key = city.toLowerCase().trim();
+        return CITY_COORDS[key] || CITY_COORDS['default'];
+      },
+
+      getPriorityColor(priority) {
+        const colors = {
+          'CRITICAL': '#ff0040',
+          'HOT': '#ffaa00',
+          'WARM': '#00ff41',
+          'COLD': '#00aaff'
+        };
+        return colors[priority?.toUpperCase()] || colors['WARM'];
+      },
+
+      createLeadMarker(lead) {
+        const coords = this.getCityCoords(lead.city);
+        // Add small random offset to prevent exact overlaps
+        const lat = coords[0] + (Math.random() - 0.5) * 0.05;
+        const lng = coords[1] + (Math.random() - 0.5) * 0.05;
+
+        const color = this.getPriorityColor(lead.priority);
+        const priorityClass = (lead.priority || 'warm').toLowerCase();
+
+        // Custom colored marker
+        const icon = L.divIcon({
+          className: 'custom-marker',
+          html: `<div style="
+            width: 12px;
+            height: 12px;
+            background: ${color};
+            border-radius: 50%;
+            border: 2px solid #000;
+            box-shadow: 0 0 10px ${color};
+          "></div>`,
+          iconSize: [16, 16],
+          iconAnchor: [8, 8]
+        });
+
+        const marker = L.marker([lat, lng], { icon });
+
+        // Popup content
+        const popupContent = `
+          <div class="lead-popup-title">${(lead.title || 'Unknown').substring(0, 40)}...</div>
+          <div class="lead-popup-detail">CITY: ${lead.city || 'Unknown'}, ${lead.state || 'CO'}</div>
+          <div class="lead-popup-detail">SOURCE: ${lead.source || 'Unknown'}</div>
+          <div class="lead-popup-detail">TRADE: ${(lead.trade || 'general').toUpperCase()}</div>
+          <div class="lead-popup-detail">PRIORITY: <span style="color: ${color}">${lead.priority || 'WARM'}</span></div>
+          <div class="lead-popup-detail">SCORE: ${lead.score || 0}</div>
+          <div class="lead-popup-value">$${(lead.revenue || 0).toLocaleString()}</div>
+          ${lead.link ? `<a href="${lead.link}" target="_blank" style="color: var(--info); font-size: 10px;">VIEW_SOURCE →</a>` : ''}
+        `;
+
+        marker.bindPopup(popupContent);
+        marker.leadData = lead;
+
+        return marker;
+      },
+
+      updateMapMarkers() {
+        // Clear existing markers
+        this.markerCluster.clearLayers();
+        this.markers = [];
+
+        // Add markers for filtered leads
+        this.filteredLeads.forEach(lead => {
+          const marker = this.createLeadMarker(lead);
+          this.markers.push(marker);
+          this.markerCluster.addLayer(marker);
+        });
+
+        // Update stats
+        const pipeline = this.filteredLeads.reduce((sum, l) => sum + (l.revenue || 0), 0);
+        document.getElementById('showingCount').textContent = this.filteredLeads.length;
+        document.getElementById('pipelineValue').textContent = '$' + pipeline.toLocaleString();
+        document.getElementById('leadTableCount').textContent = this.filteredLeads.length + ' RECORDS';
+      },
+
+      populateFilters() {
+        // Get unique values for filters
+        const sources = [...new Set(this.leads.map(l => l.source).filter(Boolean))].sort();
+        const cities = [...new Set(this.leads.map(l => l.city).filter(Boolean))].sort();
+        const trades = [...new Set(this.leads.map(l => l.trade).filter(Boolean))].sort();
+
+        // Populate source filter
+        const sourceSelect = document.getElementById('filterSource');
+        sourceSelect.innerHTML = '<option value="">ALL_SOURCES</option>' +
+          sources.map(s => `<option value="${s}">${s.toUpperCase()}</option>`).join('');
+
+        // Populate city filter
+        const citySelect = document.getElementById('filterCity');
+        citySelect.innerHTML = '<option value="">ALL_CITIES</option>' +
+          cities.map(c => `<option value="${c}">${c.toUpperCase()}</option>`).join('');
+
+        // Populate trade filter
+        const tradeSelect = document.getElementById('filterTrade');
+        tradeSelect.innerHTML = '<option value="">ALL_TRADES</option>' +
+          trades.map(t => `<option value="${t}">${t.toUpperCase()}</option>`).join('');
+      },
+
+      filterLeads() {
+        const priority = document.getElementById('filterPriority').value;
+        const source = document.getElementById('filterSource').value;
+        const city = document.getElementById('filterCity').value;
+        const trade = document.getElementById('filterTrade').value;
+
+        this.filteredLeads = this.leads.filter(lead => {
+          if (priority && (lead.priority || '').toUpperCase() !== priority) return false;
+          if (source && lead.source !== source) return false;
+          if (city && lead.city !== city) return false;
+          if (trade && lead.trade !== trade) return false;
+          return true;
+        });
+
+        this.sortLeads();
+      },
+
+      sortLeads() {
+        const sortBy = document.getElementById('sortBy').value;
+
+        const priorityOrder = { 'CRITICAL': 0, 'HOT': 1, 'WARM': 2, 'COLD': 3 };
+
+        this.filteredLeads.sort((a, b) => {
+          switch (sortBy) {
+            case 'value':
+              return (b.revenue || 0) - (a.revenue || 0);
+            case 'score':
+              return (b.score || 0) - (a.score || 0);
+            case 'priority':
+              return (priorityOrder[a.priority?.toUpperCase()] || 3) - (priorityOrder[b.priority?.toUpperCase()] || 3);
+            case 'date':
+            default:
+              return new Date(b.created_at || 0) - new Date(a.created_at || 0);
+          }
+        });
+
+        this.updateMapMarkers();
+        this.renderLeadsTable();
+      },
+
+      setMapView(view) {
+        this.mapView = view;
+        document.getElementById('viewMapBtn').classList.toggle('active', view === 'map');
+        document.getElementById('viewTableBtn').classList.toggle('active', view === 'table');
+
+        const mapEl = document.getElementById('leadMap');
+        const tableEl = document.getElementById('leadsTable').parentElement.parentElement;
+
+        if (view === 'map') {
+          mapEl.style.display = 'block';
+          tableEl.style.display = 'block';
+          setTimeout(() => this.map.invalidateSize(), 100);
+        } else {
+          mapEl.style.display = 'none';
+          tableEl.style.display = 'block';
+        }
       },
 
       connectWebSocket() {
@@ -1134,14 +1529,36 @@
       },
 
       renderLeads() {
-        const rows = this.leads.map(l => `
-          <tr onclick="${l.link ? `window.open('${l.link}', '_blank')` : ''}" style="cursor: ${l.link ? 'pointer' : 'default'}">
-            <td style="color: ${l.link ? 'var(--info)' : 'var(--matrix-green)'};">${l.title}</td>
-            <td>${l.city}</td>
-            <td>${l.source}</td>
-            <td><span class="badge badge-${(l.priority || 'warm').toLowerCase()}">${l.priority}</span></td>
+        // Initialize filtered leads with all leads
+        this.filteredLeads = [...this.leads];
+
+        // Populate filter dropdowns
+        this.populateFilters();
+
+        // Apply current filters and render
+        this.filterLeads();
+
+        // Ensure map is properly sized
+        if (this.map) {
+          setTimeout(() => this.map.invalidateSize(), 100);
+        }
+      },
+
+      renderLeadsTable() {
+        const rows = this.filteredLeads.map(l => `
+          <tr onclick="${l.link ? `window.open('${l.link}', '_blank')` : ''}" style="cursor: ${l.link ? 'pointer' : 'default'}"
+              onmouseenter="app.highlightMarker('${l.id}')" onmouseleave="app.unhighlightMarker()">
+            <td style="color: ${l.link ? 'var(--info)' : 'var(--matrix-green)'};">${(l.title || '').substring(0, 50)}${l.title?.length > 50 ? '...' : ''}</td>
+            <td>${l.city || 'Unknown'}</td>
+            <td style="font-size: 10px;">${l.source || 'Unknown'}</td>
+            <td><span class="badge badge-${(l.priority || 'warm').toLowerCase()}">${l.priority || 'WARM'}</span></td>
             <td style="text-align: right; color: var(--matrix-green);">$${(l.revenue || 0).toLocaleString()}</td>
-            <td style="text-align: center;">${l.score}</td>
+            <td style="text-align: center;">${l.score || 0}</td>
+            <td style="text-align: center;">
+              <button class="btn" style="padding: 4px 8px; font-size: 9px;" onclick="event.stopPropagation(); app.zoomToLead('${l.id}')">
+                [PIN]
+              </button>
+            </td>
           </tr>
         `).join('');
 
@@ -1155,11 +1572,35 @@
                 <th>PRIORITY</th>
                 <th style="text-align: right;">VALUE</th>
                 <th style="text-align: center;">SCORE</th>
+                <th style="text-align: center;">MAP</th>
               </tr>
             </thead>
             <tbody>${rows}</tbody>
           </table>
         `;
+      },
+
+      highlightMarker(leadId) {
+        const marker = this.markers.find(m => m.leadData?.id === leadId);
+        if (marker) {
+          marker.openPopup();
+        }
+      },
+
+      unhighlightMarker() {
+        // Optional: close popup on mouse leave
+      },
+
+      zoomToLead(leadId) {
+        const marker = this.markers.find(m => m.leadData?.id === leadId);
+        if (marker) {
+          this.map.setView(marker.getLatLng(), 10);
+          marker.openPopup();
+          // Switch to map view if in table view
+          if (this.mapView === 'table') {
+            this.setMapView('map');
+          }
+        }
       },
 
       renderWorkers() {
