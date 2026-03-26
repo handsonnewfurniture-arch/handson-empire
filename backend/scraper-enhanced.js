@@ -194,6 +194,18 @@ async function scrapeCraigslist(city = 'denver', trade = 'movers') {
     const $ = cheerio.load(data);
     const leads = [];
 
+    // FIRST: Extract URLs from HTML anchors (Craigslist doesn't include URLs in JSON-LD)
+    const titleToUrl = {};
+    $('a[href*="craigslist.org"]').each((i, el) => {
+      const href = $(el).attr('href') || '';
+      // Normalize: trim, collapse whitespace, lowercase
+      const text = $(el).text().replace(/\s+/g, ' ').trim().toLowerCase();
+      // Only capture listing URLs (format: /xxx/d/location-title/12345.html)
+      if (href.match(/\/d\/[^\/]+\/\d+\.html/) && text.length > 5) {
+        titleToUrl[text] = href;
+      }
+    });
+
     // NEW: Parse JSON-LD structured data (Craigslist's new format)
     const jsonLdScript = $('#ld_searchpage_results').html();
     if (jsonLdScript) {
@@ -209,8 +221,15 @@ async function scrapeCraigslist(city = 'denver', trade = 'movers') {
           const price = listing.offers?.price || '';
           const address = listing.offers?.availableAtOrFrom?.address || {};
           const location = address.addressLocality || city;
-          // Get URL from JSON-LD - can be on listing.url or item.url
-          const listingUrl = listing.url || item.url || listing['@id'] || null;
+          // Get URL from our titleToUrl map (anchor text includes price/location, so use partial match)
+          const normalizedTitle = title.replace(/\s+/g, ' ').trim().toLowerCase();
+          let listingUrl = null;
+          for (const [anchorText, url] of Object.entries(titleToUrl)) {
+            if (anchorText.startsWith(normalizedTitle)) {
+              listingUrl = url;
+              break;
+            }
+          }
 
           const titleLower = title.toLowerCase();
           const isRelevant = keywords.some(kw => titleLower.includes(kw.toLowerCase()));
