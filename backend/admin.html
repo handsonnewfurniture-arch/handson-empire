@@ -1999,7 +1999,7 @@
         this.showNotification(`[EXEC] RUNNING: ${name}`, 'info');
 
         try {
-          const response = await fetch(`${this.apiBase}/api/scrape/${scraper.apiName}`, {
+          const response = await fetch(`/api/scrape/${scraper.apiName}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ city: 'denver', trade: 'movers' })
@@ -2042,7 +2042,7 @@
         this.renderScrapers();
 
         try {
-          const response = await fetch(`${this.apiBase}/api/scrape/all`, {
+          const response = await fetch(`/api/scrape/all`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' }
           });
